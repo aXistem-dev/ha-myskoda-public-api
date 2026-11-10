@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Tag matches the manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Compare
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/skoda_api/manifest.json'))['version'])")
+          if [ "v${version}" != "${TAG}" ]; then
+            echo "::error::The release tag is ${TAG}, but manifest.json says ${version}."
+            exit 1
+          fi
+          echo "Tag ${TAG} matches manifest version ${version}."

@@ -1,0 +1,43 @@
+[project]
+name = "ha-myskoda-public-api"
+version = "0.3.2"
+description = "Unofficial Home Assistant integration for the MyŠkoda Public API."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.14.2"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest-homeassistant-custom-component==0.13.375",
+    "aioresponses>=0.7",
+    "ruff>=0.17",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+# One version below the runtime, so the syntax stays readable by older tools.
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "PL", "RUF", "ASYNC", "C4", "PIE", "RET"]
+ignore = [
+    "E501",    # line length is the formatter's business
+    "PLR0911", # error mapping returns early by design
+    "PLR0912",
+    "PLR0913",
+    "PLR0917",
+    "PLR2004",
+    "RUF012",  # Home Assistant sets entity defaults as class attributes
+    "RUF001",  # the name of the make is written with its caron
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
+combine-as-imports = true

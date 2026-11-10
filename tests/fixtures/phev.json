@@ -1,0 +1,33 @@
+{
+  "vehicle": {
+    "vin": "TMBZZZNX1R9999999",
+    "name": "Octavia iV",
+    "fuelStatus": {
+      "carType": "HYBRID",
+      "totalRangeInKm": 640,
+      "primaryEngineRange": {
+        "engineType": "GASOLINE",
+        "currentFuelLevelInPercent": 80,
+        "remainingRangeInKm": 600
+      },
+      "secondaryEngineRange": {
+        "engineType": "ELECTRIC",
+        "currentSoCInPercent": 70,
+        "remainingRangeInKm": 40
+      },
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "charging": {
+      "isVehicleInSavedLocation": false,
+      "status": {
+        "chargeType": "OFF",
+        "plugConnectionState": "DISCONNECTED",
+        "battery": { "remainingCruisingRangeInMeters": 40000, "stateOfChargeInPercent": 70 }
+      },
+      "settings": { "targetStateOfChargeInPercent": 100 },
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "operations": []
+  },
+  "errors": []
+}

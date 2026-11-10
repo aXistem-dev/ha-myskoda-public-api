@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work as described
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the README first, in particular **Request quota** and **Troubleshooting**.
+        Remove your VIN, API key, S-PIN, licence plate and addresses from anything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: Integration version
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.11.1"
+    validations:
+      required: true
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle
+      description: Model, model year and drivetrain (electric, plug-in hybrid, petrol, diesel, CNG).
+      placeholder: "Elroq 2025, electric"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >
+        Settings → Devices & services → MyŠkoda Public API → ⋮ → Download diagnostics.
+        VIN, key, S-PIN, plate, position and names are blanked in that file. Attach it here.
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: >
+        Enable debug logging for the integration, reproduce the problem and paste the lines of
+        `custom_components.skoda_api`. Refused requests are logged with Škoda's trace id.
+      render: text

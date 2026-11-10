@@ -1,0 +1,102 @@
+blueprint:
+  name: Škoda parked unsecured
+  description: >-
+    Sends a notification when a Škoda stays parked with a door, a window,
+    the trunk or the bonnet open, or unlocked. Uses the "Parked unsecured"
+    sensor of the MyŠkoda Public API (unofficial) integration.
+  domain: automation
+  author: aXistem-dev
+  homeassistant:
+    min_version: "2026.10.0"
+  input:
+    vehicle_sensor:
+      name: Parked unsecured sensor
+      description: The "Parked unsecured" sensor of the vehicle.
+      selector:
+        entity:
+          filter:
+            - integration: skoda_api
+              domain: binary_sensor
+              device_class: safety
+    delay:
+      name: Delay
+      description: How long the vehicle has to stay unsecured before the notification.
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 120
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    notify_action:
+      name: Notify action
+      description: >-
+        The notify action to send with, for example
+        notify.mobile_app_my_phone.
+      selector:
+        text:
+    critical:
+      name: Critical notification
+      description: >-
+        Ask the Companion app to deliver the notification as critical: it
+        sounds also when the phone is on silent or do not disturb.
+      default: false
+      selector:
+        boolean:
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input vehicle_sensor
+    to: "on"
+    for:
+      minutes: !input delay
+
+variables:
+  critical: !input critical
+  vehicle: >-
+    {% set device = device_id(trigger.entity_id) %}
+    {{ (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+       if device else state_attr(trigger.entity_id, 'friendly_name') }}
+  reasons: >-
+    {% set labels = {
+      'doors_open': 'a door is open',
+      'unlocked': 'it is unlocked',
+      'windows_open': 'a window is open',
+      'trunk_open': 'the trunk is open',
+      'bonnet_open': 'the bonnet is open'
+    } %}
+    {% set ns = namespace(items=[]) %}
+    {% for reason in state_attr(trigger.entity_id, 'reasons') or [] %}
+      {% set ns.items = ns.items + [labels.get(reason, reason)] %}
+    {% endfor %}
+    {{ ns.items | join(', ') }}
+  title: "{{ vehicle }} is not secured"
+  message: >-
+    {{ vehicle }} is parked and not secured{{ ': ' ~ reasons if reasons }}.
+
+actions:
+  - if:
+      - condition: template
+        value_template: "{{ critical }}"
+    then:
+      - action: !input notify_action
+        data:
+          title: "{{ title }}"
+          message: "{{ message }}"
+          data:
+            # iOS
+            push:
+              interruption-level: critical
+            # Android
+            ttl: 0
+            priority: high
+            channel: alarm_stream
+    else:
+      - action: !input notify_action
+        data:
+          title: "{{ title }}"
+          message: "{{ message }}"

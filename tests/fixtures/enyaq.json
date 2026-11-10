@@ -1,0 +1,109 @@
+{
+  "vehicle": {
+    "vin": "TMBJB9NY5RF999999",
+    "name": "Enyaq",
+    "licensePlate": "1MB 1234",
+    "renderUrl": "https://example.com/render/enyaq.png",
+    "status": {
+      "overall": {
+        "doorsLocked": "YES",
+        "locked": "YES",
+        "doors": "CLOSED",
+        "windows": "CLOSED",
+        "lights": "OFF",
+        "reliableLockStatus": "LOCKED"
+      },
+      "detail": { "sunroof": "UNSUPPORTED", "trunk": "CLOSED", "bonnet": "CLOSED" },
+      "carCapturedTimestamp": "2026-06-29T08:00:00Z"
+    },
+    "odometer": { "mileageInKm": 23456, "carCapturedTimestamp": "2026-06-29T08:00:00Z" },
+    "parkingPosition": {
+      "state": "PARKED",
+      "gpsCoordinates": { "latitude": 50.0755, "longitude": 14.4378 },
+      "formattedAddress": "Example Street 1, 110 00 Prague, Czechia"
+    },
+    "airConditioning": {
+      "state": "OFF",
+      "targetTemperature": { "value": 22, "unit": "CELSIUS" },
+      "airConditioningWithoutExternalPower": true,
+      "airConditioningAtUnlock": false,
+      "windowHeating": { "enabled": true, "front": "OFF", "rear": "OFF" },
+      "carCapturedTimestamp": "2026-06-29T08:00:00Z"
+    },
+    "charging": {
+      "isVehicleInSavedLocation": true,
+      "status": {
+        "chargingRateInKilometersPerHour": 52.0,
+        "chargePowerInKw": 10.5,
+        "remainingTimeToFullyChargedInMinutes": 95,
+        "fullyChargedAt": "2026-06-29T09:35:00Z",
+        "state": "CHARGING",
+        "chargeType": "AC",
+        "plugConnectionState": "CONNECTED",
+        "plugLockState": "LOCKED",
+        "battery": { "remainingCruisingRangeInMeters": 312000, "stateOfChargeInPercent": 64 }
+      },
+      "settings": {
+        "targetStateOfChargeInPercent": 80,
+        "batteryCareModeTargetValueInPercent": 80,
+        "preferredChargeMode": "MANUAL",
+        "availableChargeModes": ["MANUAL", "TIMER", "SOMETHING_NEW"],
+        "chargingCareMode": "ACTIVATED",
+        "autoUnlockPlugWhenCharged": "PERMANENT",
+        "maxChargeCurrentAc": "MAXIMUM"
+      },
+      "carCapturedTimestamp": "2026-06-29T08:00:00Z"
+    },
+    "chargingProfiles": {
+      "profiles": [
+        {
+          "id": 1,
+          "name": "Home",
+          "settings": {
+            "maxChargingCurrent": "MAXIMUM",
+            "minBatteryStateOfCharge": { "enabled": true, "minimumBatteryStateOfChargeInPercent": 20 },
+            "targetStateOfChargeInPercent": 80,
+            "autoUnlockPlugWhenCharged": "OFF"
+          },
+          "preferredChargingTimes": [
+            { "id": 1, "enabled": true, "startTime": "22:00", "endTime": "06:00" },
+            { "id": 2, "enabled": false, "startTime": "00:00", "endTime": "00:00" }
+          ],
+          "timers": [
+            { "id": 1, "enabled": true, "time": "07:30", "type": "RECURRING", "recurringOn": ["MONDAY", "FRIDAY"] },
+            { "id": 2, "enabled": false, "time": "08:00", "type": "ONE_OFF", "oneOffDay": "SATURDAY" }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Work",
+          "settings": {
+            "maxChargingCurrent": "REDUCED",
+            "minBatteryStateOfCharge": { "minimumBatteryStateOfChargeInPercent": 50 },
+            "targetStateOfChargeInPercent": 100,
+            "autoUnlockPlugWhenCharged": "PERMANENT"
+          },
+          "preferredChargingTimes": [],
+          "timers": []
+        }
+      ],
+      "currentVehiclePositionProfile": {
+        "id": 1,
+        "name": "Home",
+        "targetStateOfChargeInPercent": 80,
+        "nextChargingTime": "22:00"
+      },
+      "carCapturedTimestamp": "2026-06-29T08:00:00Z"
+    },
+    "operations": [
+      { "name": "startCharging" },
+      { "name": "stopCharging" },
+      { "name": "setChargingLimit" },
+      { "name": "setChargeMode" },
+      { "name": "updateChargingProfile" },
+      { "name": "startAirConditioning" },
+      { "name": "stopAirConditioning" }
+    ]
+  },
+  "errors": []
+}

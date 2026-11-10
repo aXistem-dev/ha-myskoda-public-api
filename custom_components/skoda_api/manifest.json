@@ -1,0 +1,27 @@
+{
+  "domain": "skoda_api",
+  "name": "MyŠkoda Public API (unofficial)",
+  "after_dependencies": [
+    "frontend"
+  ],
+  "categories": [
+    "vehicles_transport.cars_evs",
+    "energy.ev_charging"
+  ],
+  "codeowners": [
+    "@aXistem-dev"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
+  "documentation": "https://github.com/aXistem-dev/ha-myskoda-public-api",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/aXistem-dev/ha-myskoda-public-api/issues",
+  "loggers": [
+    "custom_components.skoda_api"
+  ],
+  "requirements": [],
+  "version": "0.3.2"
+}

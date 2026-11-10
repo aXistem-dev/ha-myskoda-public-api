@@ -1,0 +1,14 @@
+{
+  "vehicle": {
+    "vin": "TMBJB9NY5RF999999",
+    "name": "Enyaq",
+    "licensePlate": "1MB 1234",
+    "odometer": { "mileageInKm": 23460, "carCapturedTimestamp": "2026-06-29T08:10:00Z" }
+  },
+  "errors": [
+    { "type": "RENDER_UNAVAILABLE", "description": "render service timed out" },
+    { "type": "CHARGING_UNAVAILABLE", "description": "charging service timed out" },
+    { "type": "VEHICLE_STATUS_DISABLED", "description": "privacy mode" },
+    { "type": "OPERATIONS_UNAVAILABLE" }
+  ]
+}

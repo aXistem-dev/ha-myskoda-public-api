@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Weekly, so a new Home Assistant release is tested without a code change.
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Lint and tests (${{ matrix.home-assistant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # pinned: the version in pyproject.toml; latest: the newest test harness
+        # and the Home Assistant release it brings.
+        home-assistant: [pinned, latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+      - run: uv sync
+      - name: Use the newest Home Assistant test harness
+        if: matrix.home-assistant == 'latest'
+        run: uv pip install --upgrade pytest-homeassistant-custom-component
+      - run: uv run --no-sync python -c "import homeassistant.const as c; print('Home Assistant', c.__version__)"
+      - run: uv run --no-sync ruff check . && uv run --no-sync ruff format --check .
+      - run: uv run --no-sync pytest -q

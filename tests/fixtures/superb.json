@@ -1,0 +1,52 @@
+{
+  "vehicle": {
+    "vin": "TMBAR7NP9R7999999",
+    "name": "Superb",
+    "licensePlate": "2AB 5678",
+    "renderUrl": "https://example.com/render/superb.png",
+    "status": {
+      "overall": {
+        "doorsLocked": "TRUNK_OPENED",
+        "locked": "NO",
+        "doors": "CLOSED",
+        "windows": "OPEN",
+        "lights": "ON",
+        "reliableLockStatus": "UNLOCKED"
+      },
+      "detail": { "sunroof": "CLOSED", "trunk": "OPEN", "bonnet": "CLOSED" },
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "fuelStatus": {
+      "carType": "DIESEL",
+      "adBlueRange": 6400,
+      "totalRangeInKm": 780,
+      "primaryEngineRange": {
+        "engineType": "DIESEL",
+        "currentFuelLevelInPercent": 71,
+        "remainingRangeInKm": 780
+      },
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "odometer": { "mileageInKm": 98765, "carCapturedTimestamp": "2026-06-29T07:45:00Z" },
+    "parkingPosition": { "state": "IN_MOTION" },
+    "auxiliaryHeating": {
+      "state": "OFF",
+      "startMode": "HEATING",
+      "durationInSeconds": 1200,
+      "targetTemperature": { "value": 21.5, "unit": "CELSIUS" },
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "activeVentilation": {
+      "state": "VENTILATION",
+      "durationInSeconds": 600,
+      "carCapturedTimestamp": "2026-06-29T07:45:00Z"
+    },
+    "operations": [
+      { "name": "startAuxiliaryHeating" },
+      { "name": "stopAuxiliaryHeating" },
+      { "name": "startActiveVentilation" },
+      { "name": "stopActiveVentilation" }
+    ]
+  },
+  "errors": []
+}

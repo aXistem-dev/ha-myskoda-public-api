@@ -1,0 +1,758 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Škoda toevoegen",
+        "description": "Een onofficiële integratie, niet gemaakt of ondersteund door Škoda; ze gebruikt de officiële publieke API van Škoda.\n\nMaak een API-sleutel aan in de MyŠkoda-app: Instellingen → Smart Home → API-sleutels, of open [go.skoda.eu/api-keys]({api_keys_url}) op je telefoon. Kies de wagen waarvoor de sleutel geldt en kopieer de sleutel meteen; hij wordt maar één keer getoond.",
+        "data": {
+          "vin": "VIN",
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "vin": "Het voertuigidentificatienummer van 17 tekens, te vinden in de MyŠkoda-app en op het inschrijvingsbewijs.",
+          "api_key": "De sleutel die je in de MyŠkoda-app voor deze wagen aanmaakte."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Geavanceerd",
+            "data": {
+              "base_url": "API-adres"
+            },
+            "data_description": {
+              "base_url": "Waar de MyŠkoda Public API bereikbaar is. Laat ongewijzigd, tenzij Škoda het adres wijzigt of je een testserver gebruikt."
+            }
+          }
+        }
+      },
+      "reauth_confirm": {
+        "title": "Nieuwe API-sleutel nodig",
+        "description": "De API-sleutel van {name} is verlopen of geldt niet meer voor de wagen. Maak of vernieuw een sleutel in de MyŠkoda-app ([go.skoda.eu/api-keys]({api_keys_url})) en vul hem hier in.",
+        "data": {
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "api_key": "De nieuwe sleutel voor deze wagen."
+        }
+      },
+      "reconfigure": {
+        "title": "API-sleutel vervangen",
+        "description": "Vul een nieuwe API-sleutel in voor {name}. Sleutels maak je aan in de MyŠkoda-app ([go.skoda.eu/api-keys]({api_keys_url})).",
+        "data": {
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "api_key": "De nieuwe sleutel voor deze wagen."
+        }
+      }
+    },
+    "error": {
+      "invalid_vin": "Een VIN telt 17 tekens: cijfers en hoofdletters, zonder I, O en Q.",
+      "invalid_auth": "De API-sleutel is ongeldig of verlopen.",
+      "key_not_authorized": "Deze API-sleutel geldt niet voor deze wagen. Pas de sleutel aan in de MyŠkoda-app en kies de wagen.",
+      "vehicle_not_found": "Er is geen wagen met dit VIN bekend.",
+      "rate_limited": "Te veel aanvragen voor deze wagen. Probeer het later opnieuw.",
+      "cannot_connect": "De dienst van Škoda is niet bereikbaar.",
+      "unknown": "Onverwachte fout."
+    },
+    "abort": {
+      "already_configured": "Deze wagen is al ingesteld.",
+      "reauth_successful": "De nieuwe API-sleutel is in gebruik.",
+      "reconfigure_successful": "De nieuwe API-sleutel is in gebruik."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opties MyŠkoda Public API",
+        "data": {
+          "poll_interval": "Verversingsinterval",
+          "active_poll_interval": "Verversingsinterval tijdens activiteit",
+          "fast_poll_when_plugged": "Sneller verversen met kabel aangesloten",
+          "auto_wake_minutes": "Ladende wagen wekken na",
+          "spin": "S-PIN",
+          "readonly": "Alleen lezen"
+        },
+        "data_description": {
+          "poll_interval": "Hoe vaak de gegevens van de wagen worden opgehaald. De API laat 20 aanvragen per wagen en per uur toe; commando's tellen daarin mee.",
+          "active_poll_interval": "Hoe vaak de gegevens worden opgehaald terwijl de wagen laadt of de airconditioning, standverwarming of ventilatie werkt. Nooit trager dan het verversingsinterval.",
+          "fast_poll_when_plugged": "Gebruik het kortere interval ook zolang er een laadkabel is aangesloten, zonder te laden.",
+          "auto_wake_minutes": "Wanneer een ladende wagen zoveel minuten niets meldde, vraag hem om nieuwe gegevens. Elke wekoproep is een commando van het uurtegoed. 0 schakelt het uit; anders 10 tot 120.",
+          "spin": "Alleen nodig om de standverwarming te starten. Laat leeg om hem te wissen.",
+          "readonly": "Toon de wagen zonder bediening."
+        }
+      }
+    },
+    "error": {
+      "invalid_spin": "De S-PIN telt vier cijfers.",
+      "invalid_auto_wake": "Vul 0 in om het uit te schakelen, of 10 tot 120 minuten."
+    }
+  },
+  "issues": {
+    "api_key_expiring": {
+      "title": "De API-sleutel van {name} verloopt op {date}",
+      "description": "Maak of vernieuw een sleutel in de MyŠkoda-app en vul hem in via Opnieuw configureren bij de integratie MyŠkoda Public API. Na de vervaldatum worden de gegevens van de wagen niet meer bijgewerkt."
+    }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "De API-sleutel is ongeldig, verlopen of geldt niet voor deze wagen."
+    },
+    "rate_limited": {
+      "message": "Te veel aanvragen voor deze wagen; wacht tot het tegoed is aangevuld."
+    },
+    "update_failed": {
+      "message": "De gegevens van de wagen konden niet worden opgehaald: {error}"
+    },
+    "readonly": {
+      "message": "Deze wagen staat op alleen lezen."
+    },
+    "command_failed": {
+      "message": "Het commando is mislukt: {error}"
+    },
+    "command_not_authorized": {
+      "message": "De wagen weigerde het commando voor de eigenaar van de API-sleutel."
+    },
+    "vehicle_declined": {
+      "message": "De wagen aanvaardt nu geen commando's. Probeer het over ongeveer {minutes} min opnieuw."
+    },
+    "command_rate_limited": {
+      "message": "Het uurtegoed aan aanvragen voor deze wagen is op. Probeer het over ongeveer {minutes} min opnieuw."
+    },
+    "refresh_rate_limited": {
+      "message": "De API vroeg om tot {time} te wachten met de volgende aanvraag; de getoonde gegevens zijn de laatst ontvangen."
+    },
+    "command_disabled": {
+      "message": "Deze functie is momenteel uitgeschakeld voor de wagen."
+    },
+    "command_not_supported": {
+      "message": "De wagen ondersteunt deze functie niet."
+    },
+    "command_not_found": {
+      "message": "De wagen of het laadprofiel is onbekend."
+    },
+    "vehicle_timeout": {
+      "message": "De wagen antwoordde niet op tijd."
+    },
+    "cannot_connect": {
+      "message": "De dienst van Škoda is niet bereikbaar."
+    },
+    "cable_not_connected": {
+      "message": "Het laden kan niet starten: er is geen laadkabel aangesloten."
+    },
+    "spin_required": {
+      "message": "Om de standverwarming te starten is de S-PIN nodig. Vul hem in bij de opties van de integratie."
+    },
+    "profile_not_found": {
+      "message": "Er is geen laadprofiel {profile}."
+    },
+    "profile_entry_not_found": {
+      "message": "Het laadprofiel heeft geen item {id} in {field}."
+    },
+    "vehicle_not_loaded": {
+      "message": "Dit apparaat is geen geladen wagen van MyŠkoda Public API."
+    },
+    "nothing_to_change": {
+      "message": "Geef minstens één waarde om te wijzigen."
+    },
+    "profile_entry_position_not_found": {
+      "message": "Het laadprofiel heeft {count} items in {field}; er is geen positie {position}."
+    },
+    "wake_command_pending": {
+      "message": "Er wacht nog een opdracht op de wagen; wek hem wanneer die klaar is."
+    },
+    "wake_not_possible": {
+      "message": "De wagen kan niet worden gewekt: hij meldt geen laadmodus of aanvaardt geen nieuwe."
+    },
+    "auto_wake_range": {
+      "message": "Vul 0 in om het automatisch wekken uit te schakelen, of {min} tot {max} minuten."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "range": {
+        "name": "Actieradius"
+      },
+      "electric_range": {
+        "name": "Elektrische actieradius"
+      },
+      "gasoline_range": {
+        "name": "Actieradius benzine"
+      },
+      "diesel_range": {
+        "name": "Actieradius diesel"
+      },
+      "cng_range": {
+        "name": "Actieradius CNG"
+      },
+      "lpg_range": {
+        "name": "Actieradius LPG"
+      },
+      "gasoline_level": {
+        "name": "Benzinepeil"
+      },
+      "diesel_level": {
+        "name": "Dieselpeil"
+      },
+      "cng_level": {
+        "name": "CNG-peil"
+      },
+      "lpg_level": {
+        "name": "LPG-peil"
+      },
+      "adblue_range": {
+        "name": "Actieradius AdBlue"
+      },
+      "car_type": {
+        "name": "Aandrijving",
+        "state": {
+          "hybrid": "Hybride",
+          "gasoline": "Benzine",
+          "diesel": "Diesel",
+          "cng": "CNG",
+          "lpg": "LPG"
+        }
+      },
+      "mileage": {
+        "name": "Kilometerstand"
+      },
+      "battery_percentage": {
+        "name": "Batterij"
+      },
+      "hybrid_battery": {
+        "name": "Hybride batterij"
+      },
+      "charging_state": {
+        "name": "Laadstatus",
+        "state": {
+          "connect_cable": "Kabel niet aangesloten",
+          "charging": "Laden",
+          "conserving": "Lading behouden",
+          "ready_for_charging": "Klaar om te laden",
+          "discharging": "Ontladen",
+          "charging_interrupted": "Laden onderbroken"
+        }
+      },
+      "charge_type": {
+        "name": "Laadtype",
+        "state": {
+          "ac": "AC",
+          "dc": "DC",
+          "off": "Uit"
+        }
+      },
+      "charging_power": {
+        "name": "Laadvermogen"
+      },
+      "charging_rate": {
+        "name": "Laadsnelheid"
+      },
+      "remaining_charging_time": {
+        "name": "Resterende laadtijd"
+      },
+      "fully_charged_at": {
+        "name": "Volledig geladen"
+      },
+      "target_battery_percentage": {
+        "name": "Laadlimiet"
+      },
+      "charge_mode": {
+        "name": "Laadmodus",
+        "state": {
+          "manual": "Handmatig",
+          "timer": "Timer",
+          "timer_charging_with_climatisation": "Timer met airconditioning",
+          "preferred_charging_times": "Voorkeurslaadtijden",
+          "only_own_current": "Alleen eigen zonnestroom",
+          "immediate_discharging": "Direct ontladen",
+          "home_storage_charging": "Laden als thuisbatterij"
+        }
+      },
+      "battery_care_target": {
+        "name": "Laadlimiet batterijzorg"
+      },
+      "max_charge_current": {
+        "name": "Laadstroom",
+        "state": {
+          "maximum": "Maximaal",
+          "reduced": "Verlaagd"
+        }
+      },
+      "max_charge_current_ampere": {
+        "name": "Laadstroomlimiet"
+      },
+      "charging_location": {
+        "name": "Laadlocatie"
+      },
+      "next_charging_time": {
+        "name": "Volgende laadtijd"
+      },
+      "air_conditioning_state": {
+        "name": "Status airconditioning",
+        "state": {
+          "off": "Uit",
+          "cooling": "Koelen",
+          "heating": "Verwarmen",
+          "heating_auxiliary": "Standverwarming",
+          "ventilation": "Ventileren",
+          "completed": "Voltooid"
+        }
+      },
+      "target_temperature": {
+        "name": "Doeltemperatuur"
+      },
+      "target_temperature_reached_at": {
+        "name": "Doeltemperatuur bereikt"
+      },
+      "auxiliary_heating_state": {
+        "name": "Status standverwarming",
+        "state": {
+          "off": "Uit",
+          "preheating": "Voorverwarmen",
+          "heating_auxiliary": "Standverwarming",
+          "ventilation": "Ventileren"
+        }
+      },
+      "auxiliary_heating_duration": {
+        "name": "Duur standverwarming"
+      },
+      "auxiliary_heating_reached_at": {
+        "name": "Doeltemperatuur standverwarming bereikt"
+      },
+      "active_ventilation_state": {
+        "name": "Status actieve ventilatie",
+        "state": {
+          "off": "Uit",
+          "preheating": "Voorverwarmen",
+          "ventilation": "Ventileren"
+        }
+      },
+      "active_ventilation_duration": {
+        "name": "Duur actieve ventilatie"
+      },
+      "lock_state": {
+        "name": "Slotstatus",
+        "state": {
+          "locked": "Vergrendeld",
+          "unlocked": "Ontgrendeld",
+          "opened": "Deur of motorkap open",
+          "trunk_opened": "Koffer open"
+        }
+      },
+      "parking_address": {
+        "name": "Parkeeradres"
+      },
+      "last_updated": {
+        "name": "Laatste update van de wagen"
+      },
+      "license_plate": {
+        "name": "Nummerplaat"
+      },
+      "unavailable_data": {
+        "name": "Niet-beschikbare gegevens"
+      },
+      "api_key_expiry": {
+        "name": "Vervaldatum API-sleutel"
+      },
+      "api_quota_reset": {
+        "name": "API-tegoed aangevuld"
+      },
+      "api_requests_remaining": {
+        "name": "Resterende API-aanvragen"
+      },
+      "last_poll": {
+        "name": "Laatste opvraging"
+      },
+      "api_status": {
+        "name": "API-status",
+        "state": {
+          "ok": "OK",
+          "skipped_quota": "Overgeslagen om tegoed te sparen",
+          "rate_limited": "Aanvraaglimiet bereikt",
+          "auth_failed": "API-sleutel geweigerd",
+          "error": "Fout"
+        }
+      },
+      "quota_wait_until": {
+        "name": "Wachten op tegoed tot"
+      },
+      "current_poll_interval": {
+        "name": "Huidig verversingsinterval",
+        "state_attributes": {
+          "mode": {
+            "name": "Modus",
+            "state": {
+              "normal": "Normaal",
+              "active": "Actief"
+            }
+          }
+        }
+      },
+      "charging_profile_schedule": {
+        "name": "{profile} schema's"
+      }
+    },
+    "binary_sensor": {
+      "vehicle_lock": {
+        "name": "Slot"
+      },
+      "doors_open": {
+        "name": "Deuren"
+      },
+      "windows_open": {
+        "name": "Ramen"
+      },
+      "trunk_open": {
+        "name": "Koffer"
+      },
+      "bonnet_open": {
+        "name": "Motorkap"
+      },
+      "sunroof_open": {
+        "name": "Zonnedak"
+      },
+      "lights_on": {
+        "name": "Lichten"
+      },
+      "vehicle_in_motion": {
+        "name": "In beweging"
+      },
+      "parked_unsecured": {
+        "name": "Onbeveiligd geparkeerd"
+      },
+      "charging": {
+        "name": "Laden"
+      },
+      "charger_connected": {
+        "name": "Laadkabel"
+      },
+      "charger_lock": {
+        "name": "Slot laadkabel"
+      },
+      "in_saved_location": {
+        "name": "Op opgeslagen laadlocatie"
+      },
+      "battery_care_mode": {
+        "name": "Batterijzorgmodus"
+      },
+      "auto_unlock_plug": {
+        "name": "Kabel ontgrendelen na laden"
+      },
+      "window_heating_front": {
+        "name": "Voorruitverwarming"
+      },
+      "window_heating_rear": {
+        "name": "Achterruitverwarming"
+      },
+      "window_heating_enabled": {
+        "name": "Ruitverwarming bij airconditioning"
+      },
+      "ac_at_unlock": {
+        "name": "Airconditioning bij ontgrendelen"
+      },
+      "ac_without_external_power": {
+        "name": "Airconditioning zonder externe stroom"
+      }
+    },
+    "switch": {
+      "charging": {
+        "name": "Laden"
+      },
+      "active_ventilation": {
+        "name": "Actieve ventilatie"
+      },
+      "auxiliary_heating": {
+        "name": "Standverwarming"
+      },
+      "charging_profile_auto_unlock_plug": {
+        "name": "{profile} kabel ontgrendelen na laden"
+      },
+      "charging_profile_min_battery_enabled": {
+        "name": "{profile} minimale lading"
+      },
+      "charging_profile_timer": {
+        "name": "{profile} timer {number}"
+      },
+      "charging_profile_time": {
+        "name": "{profile} laadtijd {number}"
+      },
+      "fast_poll_when_plugged": {
+        "name": "Sneller verversen met kabel aangesloten"
+      }
+    },
+    "time": {
+      "charging_profile_timer_time": {
+        "name": "{profile} timer {number} tijdstip"
+      },
+      "charging_profile_time_start": {
+        "name": "{profile} laadtijd {number} begin"
+      },
+      "charging_profile_time_end": {
+        "name": "{profile} laadtijd {number} einde"
+      }
+    },
+    "number": {
+      "charge_limit": {
+        "name": "Laadlimiet"
+      },
+      "charging_profile_target": {
+        "name": "{profile} laadlimiet"
+      },
+      "charging_profile_min_battery": {
+        "name": "{profile} minimaal laadniveau"
+      },
+      "poll_interval": {
+        "name": "Verversingsinterval"
+      },
+      "active_poll_interval": {
+        "name": "Verversingsinterval tijdens activiteit"
+      },
+      "auto_wake_minutes": {
+        "name": "Ladende wagen wekken na"
+      }
+    },
+    "select": {
+      "charge_mode": {
+        "name": "Laadmodus",
+        "state": {
+          "manual": "Handmatig",
+          "timer": "Timer",
+          "timer_charging_with_climatisation": "Timer met airconditioning",
+          "preferred_charging_times": "Voorkeurslaadtijden",
+          "only_own_current": "Alleen eigen zonnestroom",
+          "immediate_discharging": "Direct ontladen",
+          "home_storage_charging": "Laden als thuisbatterij"
+        }
+      },
+      "charging_profile_max_current": {
+        "name": "{profile} laadstroom",
+        "state": {
+          "maximum": "Maximaal",
+          "reduced": "Verlaagd"
+        }
+      }
+    },
+    "climate": {
+      "climate": {
+        "name": "Airconditioning"
+      }
+    },
+    "image": {
+      "render": {
+        "name": "Afbeelding"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Gegevens verversen"
+      },
+      "wake": {
+        "name": "Wagen wekken"
+      }
+    }
+  },
+  "services": {
+    "start_charging": {
+      "name": "Laden starten",
+      "description": "Start het laden van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "stop_charging": {
+      "name": "Laden stoppen",
+      "description": "Stopt het laden van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "stop_air_conditioning": {
+      "name": "Airconditioning stoppen",
+      "description": "Stopt de airconditioning van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "stop_auxiliary_heating": {
+      "name": "Standverwarming stoppen",
+      "description": "Stopt de standverwarming van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "start_active_ventilation": {
+      "name": "Actieve ventilatie starten",
+      "description": "Start de actieve ventilatie van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "stop_active_ventilation": {
+      "name": "Actieve ventilatie stoppen",
+      "description": "Stopt de actieve ventilatie van een wagen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        }
+      }
+    },
+    "set_charging_limit": {
+      "name": "Laadlimiet instellen",
+      "description": "Stelt het laadniveau in waarop een wagen stopt met laden.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        },
+        "target_state_of_charge": {
+          "name": "Laadlimiet",
+          "description": "Wagens aanvaarden doorgaans 50 tot 100 % in stappen van 10."
+        }
+      }
+    },
+    "set_charge_mode": {
+      "name": "Laadmodus instellen",
+      "description": "Wijzigt hoe een wagen bepaalt wanneer hij laadt.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        },
+        "charge_mode": {
+          "name": "Laadmodus",
+          "description": "Een van de modi die de wagen aanbiedt."
+        }
+      }
+    },
+    "start_air_conditioning": {
+      "name": "Airconditioning starten",
+      "description": "Start de airconditioning van een wagen, eventueel naar een temperatuur.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        },
+        "temperature": {
+          "name": "Temperatuur",
+          "description": "Doeltemperatuur in de wagen. Zonder waarde gebruikt de wagen de vorige."
+        },
+        "without_external_power": {
+          "name": "Zonder externe stroom",
+          "description": "Laat de airconditioning op de batterij werken wanneer er geen lader is aangesloten."
+        }
+      }
+    },
+    "start_auxiliary_heating": {
+      "name": "Standverwarming starten",
+      "description": "Start de standverwarming van een wagen. De S-PIN is nodig.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        },
+        "duration": {
+          "name": "Duur",
+          "description": "Hoelang de verwarming werkt. Zonder waarde gebruikt de wagen de eigen instelling."
+        },
+        "start_mode": {
+          "name": "Modus",
+          "description": "Verwarmen of alleen ventileren."
+        },
+        "temperature": {
+          "name": "Temperatuur",
+          "description": "Doeltemperatuur in de wagen."
+        },
+        "spin": {
+          "name": "S-PIN",
+          "description": "Alleen nodig wanneer er geen S-PIN in de opties staat."
+        }
+      }
+    },
+    "update_charging_profile": {
+      "name": "Laadprofiel aanpassen",
+      "description": "Past een laadprofiel (opgeslagen laadlocatie) aan. Alleen de opgegeven waarden wijzigen.",
+      "fields": {
+        "device_id": {
+          "name": "Wagen",
+          "description": "De wagen om te bedienen."
+        },
+        "profile": {
+          "name": "Profiel",
+          "description": "Naam of id van het laadprofiel."
+        },
+        "name": {
+          "name": "Nieuwe naam",
+          "description": "Geeft het laadprofiel een andere naam."
+        },
+        "target_state_of_charge": {
+          "name": "Laadlimiet",
+          "description": "Laadniveau waarop het laden op deze locatie stopt."
+        },
+        "max_charging_current": {
+          "name": "Laadstroom",
+          "description": "Maximaal of verlaagd."
+        },
+        "auto_unlock_plug": {
+          "name": "Kabel ontgrendelen na laden",
+          "description": "Geef de laadkabel vrij zodra het laden klaar is."
+        },
+        "min_battery_enabled": {
+          "name": "Minimale lading",
+          "description": "Laad meteen, ongeacht het schema, zolang de batterij onder het minimale niveau zit."
+        },
+        "min_battery_state_of_charge": {
+          "name": "Minimaal laadniveau",
+          "description": "Niveau waaronder het laden meteen start."
+        },
+        "preferred_charging_times": {
+          "name": "Voorkeurslaadtijden",
+          "description": "Lijst met wijzigingen. Elke wijziging noemt een laadtijd bij zijn id (het getal in de naam van zijn entiteit), of bij position (zijn plaats in de lijst, vanaf 1), en geeft een of meer van enabled, start_time en end_time (UU:MM)."
+        },
+        "timers": {
+          "name": "Timers",
+          "description": "Lijst met wijzigingen. Elke wijziging noemt een timer bij zijn id (het getal in de naam van zijn entiteit), of bij position (zijn plaats in de lijst, vanaf 1), en geeft een of meer van enabled, time (UU:MM), type (one_off of recurring), one_off_day en recurring_on (weekdagen)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "start_mode": {
+      "options": {
+        "heating": "Verwarmen",
+        "ventilation": "Ventileren"
+      }
+    },
+    "max_charging_current": {
+      "options": {
+        "maximum": "Maximaal",
+        "reduced": "Verlaagd"
+      }
+    },
+    "charge_mode": {
+      "options": {
+        "manual": "Handmatig",
+        "timer": "Timer",
+        "timer_charging_with_climatisation": "Timer met airconditioning",
+        "preferred_charging_times": "Voorkeurslaadtijden",
+        "only_own_current": "Alleen eigen zonnestroom",
+        "immediate_discharging": "Direct ontladen",
+        "home_storage_charging": "Laden als thuisbatterij"
+      }
+    }
+  }
+}

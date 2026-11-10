@@ -1,0 +1,12 @@
+# Entity descriptions name their key after a constant (key=commands.KEY_...)
+# followed by translation_key=; gitleaks' generic-api-key rule reads the pair
+# as a key and its secret. Only that match of that rule is allowed; the rest
+# of the file is still scanned.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Entity description keys are names, not secrets"
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+regexes = ['''KEY_[A-Z_]+,\s+translation_key=''']

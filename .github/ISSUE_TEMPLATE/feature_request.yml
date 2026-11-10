@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an entity, command or option
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The integration can only offer what the MyŠkoda Public API offers. The README lists
+        what the API does not have (lock, honk and flash, wake-up, trips and more).
+  - type: textarea
+    id: wish
+    attributes:
+      label: What would you like, and what for?
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Where it is in the API
+      description: The operation or field of the MyŠkoda Public API, if you know it.
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle
+      placeholder: "Enyaq 2024, electric"

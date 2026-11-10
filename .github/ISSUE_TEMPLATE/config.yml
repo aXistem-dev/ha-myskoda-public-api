@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: MyŠkoda Public API documentation
+    url: https://public.api.connect.skoda-auto.cz/docs
+    about: What the API offers, its limits and its error types.

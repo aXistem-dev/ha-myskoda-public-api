@@ -1,0 +1,186 @@
+start_charging:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+stop_charging:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+set_charging_limit:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+    target_state_of_charge:
+      required: true
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 10
+          unit_of_measurement: "%"
+
+set_charge_mode:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+    charge_mode:
+      required: true
+      selector:
+        select:
+          translation_key: charge_mode
+          options:
+            - manual
+            - timer
+            - timer_charging_with_climatisation
+            - preferred_charging_times
+            - only_own_current
+            - immediate_discharging
+            - home_storage_charging
+
+stop_air_conditioning:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+stop_auxiliary_heating:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+start_active_ventilation:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+stop_active_ventilation:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+
+start_air_conditioning:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+    temperature:
+      selector:
+        number:
+          min: 15.5
+          max: 30
+          step: 0.5
+          unit_of_measurement: "°C"
+    without_external_power:
+      selector:
+        boolean:
+
+start_auxiliary_heating:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+    duration:
+      selector:
+        number:
+          min: 5
+          max: 60
+          step: 5
+          unit_of_measurement: min
+    start_mode:
+      selector:
+        select:
+          translation_key: start_mode
+          options:
+            - heating
+            - ventilation
+    temperature:
+      selector:
+        number:
+          min: 15.5
+          max: 30
+          step: 0.5
+          unit_of_measurement: "°C"
+    spin:
+      selector:
+        text:
+          type: password
+
+update_charging_profile:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: skoda_api
+    profile:
+      required: true
+      example: Home
+      selector:
+        text:
+    name:
+      selector:
+        text:
+    target_state_of_charge:
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 10
+          unit_of_measurement: "%"
+    max_charging_current:
+      selector:
+        select:
+          translation_key: max_charging_current
+          options:
+            - maximum
+            - reduced
+    auto_unlock_plug:
+      selector:
+        boolean:
+    min_battery_enabled:
+      selector:
+        boolean:
+    min_battery_state_of_charge:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+    preferred_charging_times:
+      example: '[{"position": 1, "enabled": true, "start_time": "22:00", "end_time": "06:00"}]'
+      selector:
+        object:
+    timers:
+      example: '[{"position": 1, "enabled": true, "time": "07:30", "type": "recurring", "recurring_on": ["monday", "friday"]}]'
+      selector:
+        object:
