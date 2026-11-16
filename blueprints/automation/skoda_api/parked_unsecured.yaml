@@ -57,28 +57,65 @@ triggers:
 
 variables:
   critical: !input critical
-  vehicle: >-
-    {% set device = device_id(trigger.entity_id) %}
-    {{ (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-       if device else state_attr(trigger.entity_id, 'friendly_name') }}
-  reasons: >-
-    {% set labels = {
-      'doors_open': 'a door is open',
-      'unlocked': 'it is unlocked',
-      'windows_open': 'a window is open',
-      'trunk_open': 'the trunk is open',
-      'bonnet_open': 'the bonnet is open'
-    } %}
-    {% set ns = namespace(items=[]) %}
-    {% for reason in state_attr(trigger.entity_id, 'reasons') or [] %}
-      {% set ns.items = ns.items + [labels.get(reason, reason)] %}
-    {% endfor %}
-    {{ ns.items | join(', ') }}
-  title: "{{ vehicle }} is not secured"
-  message: >-
-    {{ vehicle }} is parked and not secured{{ ': ' ~ reasons if reasons }}.
+  sensor: !input vehicle_sensor
 
 actions:
+  # The vehicle can report a closed door or its lock minutes later. Fetch the
+  # latest status first, up to 5 times 2 minutes apart until a report newer
+  # than the one that started this comes, and notify only if the vehicle is
+  # still not secured.
+  - variables:
+      first_report: "{{ trigger.to_state.attributes.reported_at | string }}"
+  - repeat:
+      sequence:
+        - action: homeassistant.update_entity
+          target:
+            entity_id: !input vehicle_sensor
+          continue_on_error: true
+        - if:
+            - condition: state
+              entity_id: !input vehicle_sensor
+              state: "on"
+            - condition: template
+              value_template: >-
+                {{ state_attr(sensor, 'reported_at') | string == first_report
+                   and repeat.index < 5 }}
+          then:
+            - delay: "00:02:00"
+      until:
+        - condition: or
+          conditions:
+            - condition: state
+              entity_id: !input vehicle_sensor
+              state: "off"
+            - condition: template
+              value_template: >-
+                {{ state_attr(sensor, 'reported_at') | string != first_report
+                   or repeat.index >= 5 }}
+  - condition: state
+    entity_id: !input vehicle_sensor
+    state: "on"
+  - variables:
+      vehicle: >-
+        {% set device = device_id(sensor) %}
+        {{ (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+           if device else state_attr(sensor, 'friendly_name') }}
+      reasons: >-
+        {% set labels = {
+          'doors_open': 'a door is open',
+          'unlocked': 'it is unlocked',
+          'windows_open': 'a window is open',
+          'trunk_open': 'the trunk is open',
+          'bonnet_open': 'the bonnet is open'
+        } %}
+        {% set ns = namespace(items=[]) %}
+        {% for reason in state_attr(sensor, 'reasons') or [] %}
+          {% set ns.items = ns.items + [labels.get(reason, reason)] %}
+        {% endfor %}
+        {{ ns.items | join(', ') }}
+      title: "{{ vehicle }} is not secured"
+      message: >-
+        {{ vehicle }} is parked and not secured{{ ': ' ~ reasons if reasons }}.
   - if:
       - condition: template
         value_template: "{{ critical }}"

@@ -3,6 +3,11 @@ name: Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach skoda_api.zip to (for example v0.3.4)
+        required: true
 
 permissions:
   contents: read
@@ -11,13 +16,13 @@ jobs:
   version:
     name: Tag matches the manifest
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ env.TAG }}
       - name: Compare
-        env:
-          TAG: ${{ github.event.release.tag_name }}
         run: |
           version=$(python3 -c "import json; print(json.load(open('custom_components/skoda_api/manifest.json'))['version'])")
           if [ "v${version}" != "${TAG}" ]; then
@@ -25,3 +30,25 @@ jobs:
             exit 1
           fi
           echo "Tag ${TAG} matches manifest version ${version}."
+
+  zip:
+    name: Attach skoda_api.zip
+    # The Marketplace installs from this file (zip_release in hacs.json).
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+      - name: Build
+        working-directory: custom_components/skoda_api
+        run: |
+          find . -name __pycache__ -prune -o -type f -print | sort | zip -X -q "${GITHUB_WORKSPACE}/skoda_api.zip" -@
+          unzip -l "${GITHUB_WORKSPACE}/skoda_api.zip"
+      - name: Upload
+        run: gh release upload "${TAG}" skoda_api.zip --clobber --repo "${GITHUB_REPOSITORY}"

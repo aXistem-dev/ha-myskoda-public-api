@@ -12,6 +12,7 @@ from .const import (
     SECTION_CHARGING,
 )
 from .coordinator import SkodaApiCoordinator
+from .data import VehicleData
 
 KEY_CHARGING = "charging_switch"
 KEY_CHARGE_LIMIT = "charge_limit"
@@ -111,6 +112,13 @@ async def async_start_auxiliary_heating(
         raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key="spin_required"
         )
+    if start_mode and not _reports_start_mode(coordinator.data):
+        if start_mode.lower() != "heating":
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="start_mode_not_supported"
+            )
+        # Without a start mode the heater only heats.
+        start_mode = None
     if duration_minutes is None:
         seconds = coordinator.data.number(
             SECTION_AUXILIARY_HEATING, "durationInSeconds"
@@ -127,6 +135,14 @@ async def async_start_auxiliary_heating(
         ),
         confirmed=lambda data: data.running(SECTION_AUXILIARY_HEATING) is True,
         optimistic={KEY_AUXILIARY_HEATING: True},
+    )
+
+
+def _reports_start_mode(data: VehicleData) -> bool:
+    """Return whether the vehicle lets the heater choose heating or ventilation."""
+    return (
+        data.text(SECTION_AUXILIARY_HEATING, "startMode") is not None
+        or data.text(SECTION_AUXILIARY_HEATING, "state") == "ventilation"
     )
 
 

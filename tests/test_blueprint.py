@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -20,7 +22,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from .conftest import load_fixture, setup_integration
+from .conftest import load_fixture, mock_vehicle, setup_integration
 
 BLUEPRINT = (
     Path(__file__).parent.parent
@@ -66,6 +68,7 @@ async def test_parked_unsecured_blueprint(
 ) -> None:
     """The blueprint notifies once the car has stayed unsecured for the delay."""
     notifications = async_mock_service(hass, "notify", "phone")
+    assert await async_setup_component(hass, "homeassistant", {})
     assert await async_setup_component(
         hass, "automation", {"automation": [_automation(critical=critical)]}
     )
@@ -80,6 +83,8 @@ async def test_parked_unsecured_blueprint(
     await hass.async_block_till_done()
     assert notifications == []
 
+    # Before notifying it fetches the latest status; a newer report counts.
+    mock_vehicle(aioclient_mock, _newer(payload))
     freezer.tick(timedelta(minutes=1, seconds=1))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -92,3 +97,72 @@ async def test_parked_unsecured_blueprint(
         assert call.data["data"]["push"] == {"interruption-level": "critical"}
     else:
         assert "data" not in call.data
+
+
+async def _settle() -> None:
+    """Let the automation run until it waits; it may be in a delay."""
+    for _ in range(50):
+        await asyncio.sleep(0)
+
+
+def _newer(payload: dict[str, Any], **detail: str) -> dict[str, Any]:
+    """Return the payload as reported a few minutes later."""
+    newer = deepcopy(payload)
+    status = newer["vehicle"]["status"]
+    status["carCapturedTimestamp"] = "2099-01-01T00:00:00Z"
+    status["detail"].update(detail)
+    return newer
+
+
+async def _unsecured(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+) -> tuple[list, dict[str, Any]]:
+    notifications = async_mock_service(hass, "notify", "phone")
+    assert await async_setup_component(hass, "homeassistant", {})
+    assert await async_setup_component(
+        hass, "automation", {"automation": [_automation()]}
+    )
+    payload = load_fixture("enyaq")
+    payload["vehicle"]["status"]["detail"]["trunk"] = "OPEN"
+    # Not charging, so no poll of its own comes before the notification.
+    payload["vehicle"]["charging"]["status"]["state"] = "READY_FOR_CHARGING"
+    await setup_integration(hass, config_entry, aioclient_mock, payload)
+    return notifications, payload
+
+
+async def test_blueprint_quiet_when_the_newer_report_is_secured(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """A car that reports its closed boot late gets no notification."""
+    notifications, payload = await _unsecured(hass, config_entry, aioclient_mock)
+    mock_vehicle(aioclient_mock, _newer(payload, trunk="CLOSED"))
+    freezer.tick(timedelta(minutes=5, seconds=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass.states.get("binary_sensor.enyaq_parked_unsecured").state == "off"
+    assert notifications == []
+
+
+async def test_blueprint_notifies_when_no_newer_report_comes(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Without a newer report it asks a few times, then notifies anyway."""
+    notifications, _ = await _unsecured(hass, config_entry, aioclient_mock)
+    freezer.tick(timedelta(minutes=5, seconds=1))
+    async_fire_time_changed(hass)
+    await _settle()
+    assert notifications == []
+    for _ in range(4):
+        freezer.tick(timedelta(minutes=2, seconds=1))
+        async_fire_time_changed(hass)
+        await _settle()
+    [call] = notifications
+    assert call.data["message"] == "Enyaq is parked and not secured: the trunk is open."

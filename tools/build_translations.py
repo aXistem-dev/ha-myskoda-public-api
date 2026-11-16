@@ -338,6 +338,12 @@ TEXTS: dict[str, Any] = {
                 "Om de standverwarming te starten is de S-PIN nodig. Vul hem in bij de opties van de integratie.",
             )
         },
+        "start_mode_not_supported": {
+            "message": (
+                "This vehicle's auxiliary heating only heats: it reports no start mode, so ventilation cannot be chosen.",
+                "De standverwarming van deze wagen verwarmt alleen: hij meldt geen startmodus, dus ventileren kan niet gekozen worden.",
+            )
+        },
         "profile_not_found": {
             "message": (
                 "There is no charging profile {profile}.",
@@ -804,8 +810,8 @@ TEXTS: dict[str, Any] = {
                 "start_mode": {
                     "name": ("Mode", "Modus"),
                     "description": (
-                        "Heat or only ventilate.",
-                        "Verwarmen of alleen ventileren.",
+                        "Heat or only ventilate. Ventilation only for vehicles that report a start mode.",
+                        "Verwarmen of alleen ventileren. Ventileren alleen voor wagens die een startmodus melden.",
                     ),
                 },
                 "temperature": {

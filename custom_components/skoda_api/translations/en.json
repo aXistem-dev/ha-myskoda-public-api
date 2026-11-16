@@ -142,6 +142,9 @@
     "spin_required": {
       "message": "Starting the auxiliary heating needs the S-PIN. Enter it in the options of the integration."
     },
+    "start_mode_not_supported": {
+      "message": "This vehicle's auxiliary heating only heats: it reports no start mode, so ventilation cannot be chosen."
+    },
     "profile_not_found": {
       "message": "There is no charging profile {profile}."
     },
@@ -671,7 +674,7 @@
         },
         "start_mode": {
           "name": "Mode",
-          "description": "Heat or only ventilate."
+          "description": "Heat or only ventilate. Ventilation only for vehicles that report a start mode."
         },
         "temperature": {
           "name": "Temperature",

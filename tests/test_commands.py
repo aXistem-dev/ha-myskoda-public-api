@@ -243,6 +243,58 @@ async def test_climate(
     assert hass.states.get(entity_id).attributes["hvac_action"] == "off"
 
 
+def _without_air_conditioning() -> dict[str, Any]:
+    """Return the sample response with the air-conditioning part unavailable."""
+    payload = load_fixture("enyaq")
+    del payload["vehicle"]["airConditioning"]
+    payload["errors"] = [
+        {"type": "AIR_CONDITIONING_UNAVAILABLE", "description": "Not retrieved"}
+    ]
+    return payload
+
+
+async def test_climate_works_while_its_status_is_missing(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Start and stop still work when the vehicle cannot report the climate."""
+    await setup_integration(hass, config_entry, aioclient_mock)
+    mock_vehicle(aioclient_mock, _without_air_conditioning())
+    for _ in range(4):
+        freezer.tick(timedelta(minutes=10, seconds=1))
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+    entity_id = "climate.enyaq_air_conditioning"
+    assert _state(hass, entity_id) == "unknown"
+
+    mock_command(aioclient_mock, "post", "air-conditioning/start")
+    mock_command(aioclient_mock, "post", "air-conditioning/stop")
+    await _call(hass, "climate", "set_temperature", entity_id, temperature=21)
+    await _call(hass, "climate", "turn_on", entity_id)
+    assert calls(aioclient_mock, "post", "air-conditioning/start") == [
+        {"targetTemperature": {"value": 21, "unit": "CELSIUS"}}
+    ]
+    assert _state(hass, entity_id) == "heat_cool"
+    await _call(hass, "climate", "turn_off", entity_id)
+    assert calls(aioclient_mock, "post", "air-conditioning/stop") == [None]
+
+
+async def test_climate_is_set_up_while_its_status_is_missing(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    """A start of Home Assistant during an outage still offers the climate."""
+    await setup_integration(
+        hass, config_entry, aioclient_mock, _without_air_conditioning()
+    )
+    assert _state(hass, "climate.enyaq_air_conditioning") == "unknown"
+    # Its sensors have nothing to show and stay away.
+    assert hass.states.get("sensor.enyaq_air_conditioning_state") is None
+
+
 async def test_climate_chosen_temperature_yields_to_the_vehicle(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -1163,3 +1215,69 @@ async def test_quota_wait_entity_clears_when_the_wait_ends(
 
     assert _state(hass, "sensor.enyaq_waiting_for_quota_until") == "unknown"
     assert len(aioclient_mock.mock_calls) == requests
+
+
+@pytest.mark.parametrize(
+    ("aux", "start_mode", "expected"),
+    [
+        # No start mode reported: the heater only heats.
+        ({"state": "OFF"}, "ventilation", None),
+        ({"state": "OFF"}, "heating", {"spin": "1234"}),
+        # Running ventilation shows the vehicle can ventilate.
+        (
+            {"state": "VENTILATION"},
+            "ventilation",
+            {"spin": "1234", "startMode": "VENTILATION"},
+        ),
+        (
+            {"state": "OFF", "startMode": "HEATING"},
+            "ventilation",
+            {"spin": "1234", "startMode": "VENTILATION"},
+        ),
+    ],
+)
+async def test_auxiliary_heating_start_mode(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    aux: dict[str, Any],
+    start_mode: str,
+    expected: dict[str, Any] | None,
+) -> None:
+    """A start mode is only sent to vehicles that report one."""
+    vin = "TMBAR7NP9R7999999"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Superb",
+        unique_id=vin,
+        data={CONF_VIN: vin, CONF_API_KEY: API_KEY},
+        options={CONF_SPIN: "1234"},
+    )
+    payload = load_fixture("superb")
+    payload["vehicle"]["auxiliaryHeating"] = aux
+    url = VEHICLE_URL.replace(VIN, vin)
+    aioclient_mock.get(url, json=payload)
+    aioclient_mock.post(f"{url}/auxiliary-heating/start", status=202)
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    async def start() -> None:
+        await hass.services.async_call(
+            DOMAIN,
+            "start_auxiliary_heating",
+            {"device_id": _device_id(hass, entry), "start_mode": start_mode},
+            blocking=True,
+        )
+
+    if expected is None:
+        with pytest.raises(ServiceValidationError) as raised:
+            await start()
+        assert raised.value.translation_key == "start_mode_not_supported"
+    else:
+        await start()
+    sent = [
+        call[2]
+        for call in aioclient_mock.mock_calls
+        if str(call[1]) == f"{url}/auxiliary-heating/start"
+    ]
+    assert sent == ([] if expected is None else [expected])

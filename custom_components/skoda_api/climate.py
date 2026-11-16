@@ -29,6 +29,7 @@ from .const import (
     SECTION_AIR_CONDITIONING,
 )
 from .coordinator import SkodaApiConfigEntry
+from .data import VehicleData
 from .entity import (
     SkodaApiDescription,
     SkodaApiEntity,
@@ -53,7 +54,15 @@ _ACTIONS = {
 
 @dataclass(frozen=True, kw_only=True)
 class SkodaApiClimateDescription(SkodaApiDescription, ClimateEntityDescription):
-    """Describe a climate entity."""
+    """Describe a climate entity.
+
+    Start and stop need no status, so the controls stay while the vehicle
+    cannot report its climate.
+    """
+
+    def exists(self, data: VehicleData) -> bool:
+        """Return True when the vehicle offers the controls."""
+        return data.controllable(*self.operations)
 
 
 AIR_CONDITIONING = SkodaApiClimateDescription(
@@ -99,6 +108,13 @@ class AirConditioning(SkodaApiEntity, ClimateEntity):
 
     # The API takes a temperature only with a start; kept until then.
     _chosen_temperature: float | None = None
+
+    @property
+    def available(self) -> bool:
+        """Return True while the vehicle offers the controls."""
+        return super(SkodaApiEntity, self).available and (
+            self.entity_description.exists(self.vehicle)
+        )
 
     @property
     def _state(self) -> str | None:

@@ -220,7 +220,9 @@ For combustion cars and plug-in hybrids.
 
 The API takes a temperature only with a start. A temperature set while the
 air conditioning is off is kept for the next start; while it runs, a new
-temperature is sent at once.
+temperature is sent at once. When the vehicle cannot report its air
+conditioning, the climate control stays: its state is unknown, but start, stop
+and the temperature still work.
 
 ### Connection
 
@@ -258,7 +260,7 @@ sent when the vehicle does not support the command, or in read-only mode.
 | `skoda_api.update_charging_profile` | Change a saved charging location. See below. |
 | `skoda_api.start_air_conditioning` | Start; optional `temperature` (15.5–30 °C) and `without_external_power`. |
 | `skoda_api.stop_air_conditioning` | Stop the air conditioning. |
-| `skoda_api.start_auxiliary_heating` | Start; optional `duration` (5–60 min), `start_mode` (`heating` or `ventilation`), `temperature` and `spin` (else the S-PIN from the options). |
+| `skoda_api.start_auxiliary_heating` | Start; optional `duration` (5–60 min), `start_mode` (`heating`, or `ventilation` on vehicles that report a start mode), `temperature` and `spin` (else the S-PIN from the options). |
 | `skoda_api.stop_auxiliary_heating` | Stop the auxiliary heating. |
 | `skoda_api.start_active_ventilation` | Start the active ventilation. |
 | `skoda_api.stop_active_ventilation` | Stop the active ventilation. |
@@ -359,6 +361,10 @@ Give it the Parked unsecured sensor and a notify action such as
 `notify.mobile_app_my_phone`. It notifies once the sensor has been on for a
 delay (0–120 minutes, default 5), naming the vehicle and the reasons, and can
 send a critical notification that sounds also on silent or do not disturb.
+The vehicle can report a closed door or its lock minutes later, so before
+notifying the blueprint fetches the latest status, every 2 minutes up to 5
+times until a newer report arrives, and stays quiet when the vehicle is
+secured by then. Each fetch uses one request of the hourly quota.
 The data arrives with each poll, so the alert comes one polling interval after
 the car was left at the earliest.
 
