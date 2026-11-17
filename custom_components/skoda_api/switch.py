@@ -13,7 +13,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import commands
 from .const import (
-    CONF_FAST_POLL_WHEN_PLUGGED,
     OP_START_ACTIVE_VENTILATION,
     OP_START_AUXILIARY_HEATING,
     OP_START_CHARGING,
@@ -96,20 +95,6 @@ SWITCHES: tuple[SkodaApiSwitchDescription, ...] = (
 
 
 @dataclass(frozen=True, kw_only=True)
-class SettingSwitchDescription(SkodaApiDescription, SwitchEntityDescription):
-    """Describe a switch that changes an option of the integration."""
-
-
-FAST_POLL_WHEN_PLUGGED = SettingSwitchDescription(
-    key=CONF_FAST_POLL_WHEN_PLUGGED,
-    translation_key="fast_poll_when_plugged",
-    entity_category=EntityCategory.CONFIG,
-    # Only vehicles with a charging cable have something to plug in.
-    exists_fn=lambda d: d.has(SECTION_CHARGING),
-)
-
-
-@dataclass(frozen=True, kw_only=True)
 class ProfileSwitchDescription(SkodaApiDescription, SwitchEntityDescription):
     """Describe a switch of a charging profile."""
 
@@ -176,7 +161,6 @@ async def async_setup_entry(
         entry,
         async_add_entities,
         described_candidates(coordinator, SWITCHES, SkodaApiSwitch),
-        described_candidates(coordinator, (FAST_POLL_WHEN_PLUGGED,), SettingSwitch),
         profile_candidates(coordinator, PROFILE_SWITCHES, ChargingProfileSwitch),
         profile_item_candidates(
             coordinator, PROFILE_ITEM_SWITCHES, ChargingProfileItemSwitch
@@ -208,34 +192,6 @@ class SkodaApiSwitch(SkodaApiEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Send the stop command."""
         await self.entity_description.turn_off_fn(self.coordinator)
-
-
-class SettingSwitch(SkodaApiEntity, SwitchEntity):
-    """An on/off option of the integration, changed from the device page."""
-
-    entity_description: SettingSwitchDescription
-
-    @property
-    def available(self) -> bool:
-        """Stay usable after a failed update; the option is local."""
-        return True
-
-    @property
-    def is_on(self) -> bool:
-        """Return the stored option."""
-        return bool(
-            self.coordinator.config_entry.options.get(
-                self.entity_description.key, False
-            )
-        )
-
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        """Switch the option on."""
-        self.coordinator.async_set_option(self.entity_description.key, True)
-
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Switch the option off."""
-        self.coordinator.async_set_option(self.entity_description.key, False)
 
 
 class ChargingProfileSwitch(ChargingProfileEntity, SwitchEntity):

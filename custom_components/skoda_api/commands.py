@@ -65,6 +65,11 @@ async def async_set_charge_mode(coordinator: SkodaApiCoordinator, mode: str) -> 
     )
 
 
+def half_degrees(temperature: float) -> float:
+    """Round to the 0.5 °C steps vehicles accept (a °F value converts unevenly)."""
+    return round(temperature * 2) / 2
+
+
 async def async_start_air_conditioning(
     coordinator: SkodaApiCoordinator,
     *,
@@ -74,6 +79,7 @@ async def async_start_air_conditioning(
     """Start the air conditioning, optionally towards a temperature."""
     optimistic: dict[str, object] = {KEY_CLIMATE: True}
     if temperature is not None:
+        temperature = half_degrees(temperature)
         optimistic[KEY_CLIMATE_TEMPERATURE] = temperature
     await coordinator.async_command(
         lambda: coordinator.client.start_air_conditioning(
@@ -131,7 +137,7 @@ async def async_start_auxiliary_heating(
             spin=spin,
             duration_seconds=int(seconds) if seconds else None,
             start_mode=start_mode.upper() if start_mode else None,
-            temperature=temperature,
+            temperature=half_degrees(temperature) if temperature is not None else None,
         ),
         confirmed=lambda data: data.running(SECTION_AUXILIARY_HEATING) is True,
         optimistic={KEY_AUXILIARY_HEATING: True},

@@ -365,6 +365,8 @@ class SkodaApiClient:
         if isinstance(body, dict):
             problem = _problem_slug(body.get("type"))
             detail = body.get("detail") or body.get("title")
+            if isinstance(detail, str):
+                detail = _shorten_vin(detail)
         # Škoda support can find a request by this id.
         trace_id = response.headers.get("traceid") or None
         message = f"HTTP {status}" + (f": {detail}" if detail else "")

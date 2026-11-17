@@ -11,17 +11,6 @@
         "data_description": {
           "vin": "Het voertuigidentificatienummer van 17 tekens, te vinden in de MyŠkoda-app en op het inschrijvingsbewijs.",
           "api_key": "De sleutel die je in de MyŠkoda-app voor deze wagen aanmaakte."
-        },
-        "sections": {
-          "advanced": {
-            "name": "Geavanceerd",
-            "data": {
-              "base_url": "API-adres"
-            },
-            "data_description": {
-              "base_url": "Waar de MyŠkoda Public API bereikbaar is. Laat ongewijzigd, tenzij Škoda het adres wijzigt of je een testserver gebruikt."
-            }
-          }
         }
       },
       "reauth_confirm": {
@@ -165,9 +154,6 @@
     },
     "wake_not_possible": {
       "message": "De wagen kan niet worden gewekt: hij meldt geen laadmodus of aanvaardt geen nieuwe."
-    },
-    "auto_wake_range": {
-      "message": "Vul 0 in om het automatisch wekken uit te schakelen, of {min} tot {max} minuten."
     }
   },
   "entity": {
@@ -477,9 +463,6 @@
       },
       "charging_profile_time": {
         "name": "{profile} laadtijd {number}"
-      },
-      "fast_poll_when_plugged": {
-        "name": "Sneller verversen met kabel aangesloten"
       }
     },
     "time": {
@@ -502,15 +485,6 @@
       },
       "charging_profile_min_battery": {
         "name": "{profile} minimaal laadniveau"
-      },
-      "poll_interval": {
-        "name": "Verversingsinterval"
-      },
-      "active_poll_interval": {
-        "name": "Verversingsinterval tijdens activiteit"
-      },
-      "auto_wake_minutes": {
-        "name": "Ladende wagen wekken na"
       }
     },
     "select": {

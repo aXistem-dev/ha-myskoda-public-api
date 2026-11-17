@@ -526,6 +526,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="unavailable_data",
         translation_key="unavailable_data",
+        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: len(d.errors),
@@ -541,6 +542,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="api_quota_reset",
         translation_key="api_quota_reset",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         coordinator_fn=_quota_reset,
@@ -555,6 +557,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="last_poll",
         translation_key="last_poll",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         always_available=True,
@@ -563,6 +566,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="api_status",
         translation_key="api_status",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.ENUM,
         options=list(API_STATUSES),
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -572,6 +576,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="quota_wait_until",
         translation_key="quota_wait_until",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         always_available=True,
@@ -580,6 +585,7 @@ SENSORS: tuple[SkodaApiSensorDescription, ...] = (
     SkodaApiSensorDescription(
         key="current_poll_interval",
         translation_key="current_poll_interval",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         entity_category=EntityCategory.DIAGNOSTIC,

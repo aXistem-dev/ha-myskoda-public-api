@@ -150,7 +150,8 @@ class SkodaApiCoordinator(DataUpdateCoordinator[VehicleData]):
             hass,
             _LOGGER,
             config_entry=entry,
-            name=f"{DOMAIN}_{self.vin}",
+            # Home Assistant logs this name; the VIN stays out of it.
+            name=f"{DOMAIN} …{self.vin[-4:]}",
             update_interval=timedelta(
                 minutes=entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
             ),
@@ -203,19 +204,6 @@ class SkodaApiCoordinator(DataUpdateCoordinator[VehicleData]):
     def auto_wake_minutes(self) -> int:
         """Return after how many silent minutes a charging vehicle is woken."""
         return int(self.config_entry.options.get(CONF_AUTO_WAKE_MINUTES, 0))
-
-    @callback
-    def async_set_option(self, key: str, value: Any) -> None:
-        """Store one option and apply it at once, without a reload."""
-        self.hass.config_entries.async_update_entry(
-            self.config_entry, options={**self.config_entry.options, key: value}
-        )
-        if self.data is not None:
-            self._apply_poll_interval(self.data)
-        if self._listeners:
-            # The new interval counts from now.
-            self._schedule_refresh()
-        self.async_update_listeners()
 
     # --------------------------------------------------------------- polling
 

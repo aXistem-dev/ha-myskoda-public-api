@@ -98,8 +98,7 @@
       "charging_profile_auto_unlock_plug": { "default": "mdi:power-plug-off" },
       "charging_profile_min_battery_enabled": { "default": "mdi:battery-alert" },
       "charging_profile_timer": { "default": "mdi:timer-off-outline", "state": { "on": "mdi:timer-outline" } },
-      "charging_profile_time": { "default": "mdi:clock-remove-outline", "state": { "on": "mdi:clock-check-outline" } },
-      "fast_poll_when_plugged": { "default": "mdi:timer-play-outline" }
+      "charging_profile_time": { "default": "mdi:clock-remove-outline", "state": { "on": "mdi:clock-check-outline" } }
     },
     "time": {
       "charging_profile_timer_time": { "default": "mdi:clock-start" },
@@ -109,10 +108,7 @@
     "number": {
       "charge_limit": { "default": "mdi:battery-arrow-up" },
       "charging_profile_target": { "default": "mdi:battery-arrow-up" },
-      "charging_profile_min_battery": { "default": "mdi:battery-alert" },
-      "poll_interval": { "default": "mdi:timer-sync-outline" },
-      "active_poll_interval": { "default": "mdi:timer-play-outline" },
-      "auto_wake_minutes": { "default": "mdi:alarm" }
+      "charging_profile_min_battery": { "default": "mdi:battery-alert" }
     },
     "select": {
       "charge_mode": { "default": "mdi:ev-plug-type2" },

@@ -11,17 +11,6 @@
         "data_description": {
           "vin": "The 17-character vehicle identification number, as shown in the MyŠkoda app and on the registration certificate.",
           "api_key": "The key created in the MyŠkoda app for this vehicle."
-        },
-        "sections": {
-          "advanced": {
-            "name": "Advanced",
-            "data": {
-              "base_url": "API address"
-            },
-            "data_description": {
-              "base_url": "Where the MyŠkoda Public API is reached. Leave unchanged unless Škoda moves it or you run a test server."
-            }
-          }
         }
       },
       "reauth_confirm": {
@@ -65,16 +54,16 @@
       "init": {
         "title": "MyŠkoda Public API options",
         "data": {
-          "poll_interval": "Update interval",
-          "active_poll_interval": "Update interval while active",
-          "fast_poll_when_plugged": "Fast updates while plugged in",
+          "poll_interval": "Polling interval",
+          "active_poll_interval": "Polling interval while active",
+          "fast_poll_when_plugged": "Fast polling while plugged in",
           "auto_wake_minutes": "Wake charging vehicle after",
           "spin": "S-PIN",
           "readonly": "Read only"
         },
         "data_description": {
           "poll_interval": "How often the vehicle data is fetched. The API allows 20 requests per vehicle and hour; commands use that budget too.",
-          "active_poll_interval": "How often the data is fetched while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the update interval.",
+          "active_poll_interval": "How often the data is fetched while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the polling interval.",
           "fast_poll_when_plugged": "Also use the shorter interval while a charging cable is plugged in, without charging.",
           "auto_wake_minutes": "When a charging vehicle has not reported for this many minutes, ask it for fresh data. Each wake is a command of the hourly quota. 0 switches it off; otherwise 10 to 120.",
           "spin": "Only needed to start the auxiliary heating. Leave empty to remove it.",
@@ -165,9 +154,6 @@
     },
     "wake_not_possible": {
       "message": "The vehicle cannot be woken: it does not report a charge mode or does not accept a new one."
-    },
-    "auto_wake_range": {
-      "message": "Enter 0 to switch the automatic wake off, or {min} to {max} minutes."
     }
   },
   "entity": {
@@ -477,9 +463,6 @@
       },
       "charging_profile_time": {
         "name": "{profile} charging time {number}"
-      },
-      "fast_poll_when_plugged": {
-        "name": "Fast polling while plugged in"
       }
     },
     "time": {
@@ -502,15 +485,6 @@
       },
       "charging_profile_min_battery": {
         "name": "{profile} minimum charge level"
-      },
-      "poll_interval": {
-        "name": "Polling interval"
-      },
-      "active_poll_interval": {
-        "name": "Polling interval while active"
-      },
-      "auto_wake_minutes": {
-        "name": "Wake charging vehicle after"
       }
     },
     "select": {

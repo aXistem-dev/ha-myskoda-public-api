@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import logging
+import os
 import re
 from typing import Any
 
@@ -14,7 +15,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import section
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -51,6 +51,7 @@ from .const import (
     DEFAULT_ACTIVE_POLL_INTERVAL,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
+    ENV_BASE_URL,
     MAX_AUTO_WAKE_MINUTES,
     MAX_POLL_INTERVAL,
     MIN_AUTO_WAKE_MINUTES,
@@ -64,10 +65,7 @@ _VIN = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 _SPIN = re.compile(r"^\d{4}$")
 
 _SECRET = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
-_URL = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
 _PLACEHOLDERS = {"api_keys_url": API_KEYS_URL}
-
-SECTION_ADVANCED = "advanced"
 
 
 def _minutes(minimum: int, maximum: int) -> NumberSelector:
@@ -112,24 +110,12 @@ class SkodaApiConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def _user_schema(defaults: Mapping[str, Any]) -> vol.Schema:
-        advanced = defaults.get(SECTION_ADVANCED) or {}
         return vol.Schema(
             {
                 vol.Required(
                     CONF_VIN, default=defaults.get(CONF_VIN, vol.UNDEFINED)
                 ): str,
                 vol.Required(CONF_API_KEY): _SECRET,
-                vol.Required(SECTION_ADVANCED): section(
-                    vol.Schema(
-                        {
-                            vol.Required(
-                                CONF_BASE_URL,
-                                default=advanced.get(CONF_BASE_URL, API_BASE_URL),
-                            ): _URL
-                        }
-                    ),
-                    {"collapsed": True},
-                ),
             }
         )
 
@@ -141,8 +127,8 @@ class SkodaApiConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             vin = user_input[CONF_VIN].strip().upper()
             api_key = user_input[CONF_API_KEY].strip()
-            advanced = user_input.get(SECTION_ADVANCED) or {}
-            base_url = advanced.get(CONF_BASE_URL, API_BASE_URL).strip().rstrip("/")
+            # Development only: point a new vehicle at a stand-in of the API.
+            base_url = os.environ.get(ENV_BASE_URL, API_BASE_URL).strip().rstrip("/")
             if not _VIN.match(vin):
                 errors[CONF_VIN] = "invalid_vin"
             else:

@@ -56,6 +56,7 @@ async def _poll(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
     await hass.async_block_till_done()
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_electric_vehicle(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -274,15 +275,11 @@ async def test_readonly_has_no_controls(
         "switch.enyaq_home_timer_1",
         "time.enyaq_home_timer_1_time",
         "button.enyaq_wake_vehicle",
-        "number.enyaq_wake_charging_vehicle_after",
     ):
         assert hass.states.get(missing) is None, missing
-    # The polling settings send nothing to the vehicle and stay.
-    assert _state(hass, "number.enyaq_polling_interval") == "10"
-    assert _state(hass, "number.enyaq_polling_interval_while_active") == "5"
-    assert _state(hass, "switch.enyaq_fast_polling_while_plugged_in") == "off"
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_partial_data_keeps_last_values_for_a_while(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -736,6 +733,7 @@ def _plugged_in() -> dict:
     return payload
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_faster_polling_while_active(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -765,64 +763,71 @@ async def test_faster_polling_while_active(
     assert coordinator.update_interval == timedelta(minutes=5)
 
 
-async def test_polling_settings_apply_without_reload(
+async def test_fast_polling_while_plugged_in(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     aioclient_mock: AiohttpClientMocker,
-    freezer: FrozenDateTimeFactory,
 ) -> None:
-    """The polling controls store options and take effect at once."""
+    """With the option on, a plugged-in vehicle is polled at the shorter interval."""
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Enyaq",
+        unique_id=VIN,
+        data=config_entry.data,
+        options={CONF_FAST_POLL_WHEN_PLUGGED: True},
+    )
     await setup_integration(hass, config_entry, aioclient_mock, _plugged_in())
-    coordinator = config_entry.runtime_data
-    reloads = AsyncMock()
-    hass.config_entries.async_schedule_reload = reloads
-    assert coordinator.update_interval == timedelta(minutes=10)
-
-    await hass.services.async_call(
-        "switch",
-        "turn_on",
-        {"entity_id": "switch.enyaq_fast_polling_while_plugged_in"},
-        blocking=True,
-    )
-    assert config_entry.options[CONF_FAST_POLL_WHEN_PLUGGED] is True
-    assert coordinator.update_interval == timedelta(minutes=5)
-    assert _state(hass, "switch.enyaq_fast_polling_while_plugged_in") == "on"
-    assert _state(hass, "sensor.enyaq_current_polling_interval") == "5"
-
-    await hass.services.async_call(
-        "switch",
-        "turn_off",
-        {"entity_id": "switch.enyaq_fast_polling_while_plugged_in"},
-        blocking=True,
-    )
-    await hass.services.async_call(
-        "number",
-        "set_value",
-        {"entity_id": "number.enyaq_polling_interval", "value": 30},
-        blocking=True,
-    )
-    assert config_entry.options[CONF_POLL_INTERVAL] == 30
-    assert coordinator.update_interval == timedelta(minutes=30)
-    assert _state(hass, "number.enyaq_polling_interval") == "30"
-
-    # The new interval counts from the change: no poll after 10 or 20 minutes.
-    aioclient_mock.mock_calls.clear()
-    for _ in range(2):
-        freezer.tick(timedelta(minutes=10))
-        async_fire_time_changed(hass)
-        await hass.async_block_till_done()
-    assert len(aioclient_mock.mock_calls) == 0
-    freezer.tick(timedelta(minutes=10, seconds=1))
-    async_fire_time_changed(hass)
-    await hass.async_block_till_done()
-    assert len(aioclient_mock.mock_calls) == 1
-
-    # Nothing was reloaded: the same coordinator kept running.
-    reloads.assert_not_called()
-    assert config_entry.state is ConfigEntryState.LOADED
-    assert config_entry.runtime_data is coordinator
+    assert config_entry.runtime_data.update_interval == timedelta(minutes=5)
 
 
+async def test_old_setting_entities_are_removed(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    """The polling settings of earlier versions live in the options now."""
+    config_entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    old = [
+        registry.async_get_or_create(
+            domain, DOMAIN, f"{VIN}_{key}", config_entry=config_entry
+        ).entity_id
+        for domain, key in (
+            ("number", "poll_interval"),
+            ("number", "active_poll_interval"),
+            ("number", "auto_wake_minutes"),
+            ("switch", "fast_poll_when_plugged"),
+        )
+    ]
+    await setup_integration(hass, config_entry, aioclient_mock)
+    for entity_id in old:
+        assert registry.async_get(entity_id) is None, entity_id
+
+
+async def test_connection_sensors_mostly_disabled_by_default(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    """Only the quota left and the key expiry show without enabling them."""
+    await setup_integration(hass, config_entry, aioclient_mock)
+    registry = er.async_get(hass)
+    assert _state(hass, "sensor.enyaq_api_requests_remaining") is not None
+    assert hass.states.get("sensor.enyaq_api_key_expiry") is not None
+    for entity_id in (
+        "sensor.enyaq_api_status",
+        "sensor.enyaq_last_poll",
+        "sensor.enyaq_current_polling_interval",
+        "sensor.enyaq_waiting_for_quota_until",
+        "sensor.enyaq_api_quota_refills",
+        "sensor.enyaq_unavailable_data",
+    ):
+        entry = registry.async_get(entity_id)
+        assert entry is not None, entity_id
+        assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION, entity_id
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_connection_sensors(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -1005,6 +1010,7 @@ async def test_stale_parts_are_not_stored(
     assert "charging" not in stored["vehicle"]
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_quota_entities_follow_the_refill(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -1032,3 +1038,24 @@ async def test_quota_entities_follow_the_refill(
     assert len(aioclient_mock.mock_calls) == requests
     assert _state(hass, "sensor.enyaq_api_requests_remaining") == "20"
     assert _state(hass, "sensor.enyaq_api_quota_refills") == STATE_UNKNOWN
+
+
+async def test_vin_stays_out_of_the_log(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A failed update is logged with the last four characters of the VIN only."""
+    await setup_integration(hass, config_entry, aioclient_mock)
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(
+        VEHICLE_URL,
+        status=503,
+        json={"type": "about:blank", "detail": f"Vehicle {VIN} did not answer"},
+    )
+    await _poll(hass, freezer)
+    assert "did not answer" in caplog.text
+    assert VIN not in caplog.text
+    assert VIN[-4:] in caplog.text

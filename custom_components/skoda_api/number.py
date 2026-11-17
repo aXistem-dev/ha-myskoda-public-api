@@ -10,24 +10,12 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
+from homeassistant.const import PERCENTAGE, EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import commands
 from .const import (
-    CONF_ACTIVE_POLL_INTERVAL,
-    CONF_AUTO_WAKE_MINUTES,
-    CONF_POLL_INTERVAL,
-    DEFAULT_ACTIVE_POLL_INTERVAL,
-    DEFAULT_POLL_INTERVAL,
-    DOMAIN,
-    MAX_AUTO_WAKE_MINUTES,
-    MAX_POLL_INTERVAL,
-    MIN_AUTO_WAKE_MINUTES,
-    MIN_POLL_INTERVAL,
-    OP_SET_CHARGE_MODE,
     OP_SET_CHARGING_LIMIT,
     SECTION_CHARGING,
     SECTION_CHARGING_PROFILES,
@@ -62,53 +50,6 @@ CHARGE_LIMIT = SkodaApiNumberDescription(
     native_max_value=100,
     native_step=10,
     mode=NumberMode.SLIDER,
-)
-
-
-@dataclass(frozen=True, kw_only=True)
-class SettingNumberDescription(SkodaApiNumberDescription):
-    """Describe a number that changes an option of the integration."""
-
-    default: int
-
-
-_MINUTES = {
-    "entity_category": EntityCategory.CONFIG,
-    "native_unit_of_measurement": UnitOfTime.MINUTES,
-    "native_step": 1,
-    "mode": NumberMode.BOX,
-}
-
-SETTING_NUMBERS: tuple[SettingNumberDescription, ...] = (
-    SettingNumberDescription(
-        key=CONF_POLL_INTERVAL,
-        translation_key="poll_interval",
-        native_min_value=MIN_POLL_INTERVAL,
-        native_max_value=MAX_POLL_INTERVAL,
-        default=DEFAULT_POLL_INTERVAL,
-        **_MINUTES,
-    ),
-    SettingNumberDescription(
-        key=CONF_ACTIVE_POLL_INTERVAL,
-        translation_key="active_poll_interval",
-        native_min_value=MIN_POLL_INTERVAL,
-        native_max_value=MAX_POLL_INTERVAL,
-        default=DEFAULT_ACTIVE_POLL_INTERVAL,
-        **_MINUTES,
-    ),
-    SettingNumberDescription(
-        key=CONF_AUTO_WAKE_MINUTES,
-        translation_key="auto_wake_minutes",
-        section=SECTION_CHARGING,
-        # A wake re-sends the charge mode.
-        operations=(OP_SET_CHARGE_MODE,),
-        exists_fn=lambda d: d.charge_mode_setting is not None,
-        # 0 switches the automatic wake off.
-        native_min_value=0,
-        native_max_value=MAX_AUTO_WAKE_MINUTES,
-        default=0,
-        **_MINUTES,
-    ),
 )
 
 
@@ -160,7 +101,6 @@ async def async_setup_entry(
         entry,
         async_add_entities,
         described_candidates(coordinator, (CHARGE_LIMIT,), ChargeLimit),
-        described_candidates(coordinator, SETTING_NUMBERS, SettingNumber),
         profile_candidates(coordinator, PROFILE_NUMBERS, ChargingProfileNumber),
     )
 
@@ -182,41 +122,6 @@ class ChargeLimit(SkodaApiEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Send the new limit to the vehicle."""
         await commands.async_set_charge_limit(self.coordinator, round(value))
-
-
-class SettingNumber(SkodaApiEntity, NumberEntity):
-    """An option of the integration, changed from the device page."""
-
-    entity_description: SettingNumberDescription
-
-    @property
-    def available(self) -> bool:
-        """Stay usable after a failed update; the option is local."""
-        return True
-
-    @property
-    def native_value(self) -> float:
-        """Return the stored option."""
-        description = self.entity_description
-        return self.coordinator.config_entry.options.get(
-            description.key, description.default
-        )
-
-    async def async_set_native_value(self, value: float) -> None:
-        """Store the option."""
-        minutes = round(value)
-        if self.entity_description.key == CONF_AUTO_WAKE_MINUTES and (
-            0 < minutes < MIN_AUTO_WAKE_MINUTES
-        ):
-            raise ServiceValidationError(
-                translation_domain=DOMAIN,
-                translation_key="auto_wake_range",
-                translation_placeholders={
-                    "min": str(MIN_AUTO_WAKE_MINUTES),
-                    "max": str(MAX_AUTO_WAKE_MINUTES),
-                },
-            )
-        self.coordinator.async_set_option(self.entity_description.key, minutes)
 
 
 class ChargingProfileNumber(ChargingProfileEntity, NumberEntity):

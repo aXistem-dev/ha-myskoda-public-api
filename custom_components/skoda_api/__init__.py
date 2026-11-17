@@ -20,7 +20,7 @@ from .const import (
     API_BASE_URL,
     CONF_BASE_URL,
     DOMAIN,
-    SETTING_KEYS,
+    REMOVED_SETTING_KEYS,
 )
 from .coordinator import (
     SkodaApiConfigEntry,
@@ -95,7 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SkodaApiConfigEntry) -> 
 def _async_remove_obsolete_entities(
     hass: HomeAssistant, entry: SkodaApiConfigEntry, coordinator: SkodaApiCoordinator
 ) -> None:
-    """Remove controls in read-only mode and sensors replaced by controls."""
+    """Remove old setting entities, controls in read-only mode and stand-ins."""
     data = coordinator.data
     registry = er.async_get(hass)
     stand_ins = {
@@ -103,15 +103,17 @@ def _async_remove_obsolete_entities(
         for description in SENSORS
         if description.replaced_by and data.controllable(*description.replaced_by)
     }
-    settings = {f"{coordinator.vin}_{key}" for key in SETTING_KEYS}
+    settings = {f"{coordinator.vin}_{key}" for key in REMOVED_SETTING_KEYS}
     wake = f"{coordinator.vin}_{WAKE.key}"
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if entity.unique_id in settings:
-            continue
         if (
-            coordinator.readonly
-            and (entity.domain in CONTROL_DOMAINS or entity.unique_id == wake)
-        ) or (entity.domain == Platform.SENSOR and entity.unique_id in stand_ins):
+            entity.unique_id in settings
+            or (
+                coordinator.readonly
+                and (entity.domain in CONTROL_DOMAINS or entity.unique_id == wake)
+            )
+            or (entity.domain == Platform.SENSOR and entity.unique_id in stand_ins)
+        ):
             registry.async_remove(entity.entity_id)
 
 

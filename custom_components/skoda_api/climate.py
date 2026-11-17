@@ -170,6 +170,7 @@ class AirConditioning(SkodaApiEntity, ClimateEntity):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
+        temperature = commands.half_degrees(temperature)
         if self._running:
             self._chosen_temperature = None
             await commands.async_start_air_conditioning(

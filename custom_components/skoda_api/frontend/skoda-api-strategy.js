@@ -188,7 +188,6 @@ const group = (title, icon, cards) =>
 const TOGGLE = { features: [{ type: "toggle" }], features_position: "inline" };
 const SLIDER = { columns: 12, features: [{ type: "numeric-input", style: "slider" }] };
 const OPTIONS = { columns: 12, features: [{ type: "select-options" }] };
-const STEPPER = { columns: 12, features: [{ type: "numeric-input", style: "buttons" }] };
 const WARN = { color: "red" };
 const HIDE = { hide_unknown: true };
 
@@ -528,10 +527,6 @@ const connectionGroup = (v, t, config) => {
     "sensor.api_status",
     "sensor.last_poll",
     "sensor.current_poll_interval",
-    ["number.poll_interval", STEPPER],
-    ["number.active_poll_interval", STEPPER],
-    ["switch.fast_poll_when_plugged", { ...TOGGLE, columns: 12 }],
-    ["number.auto_wake_minutes", STEPPER],
   ]);
   cards.push(
     ...collapse(t.polling, "mdi:timer-sync-outline", polling, {

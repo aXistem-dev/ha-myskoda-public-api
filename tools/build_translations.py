@@ -85,18 +85,6 @@ TEXTS: dict[str, Any] = {
                         "De sleutel die je in de MyŠkoda-app voor deze wagen aanmaakte.",
                     ),
                 },
-                "sections": {
-                    "advanced": {
-                        "name": ("Advanced", "Geavanceerd"),
-                        "data": {"base_url": ("API address", "API-adres")},
-                        "data_description": {
-                            "base_url": (
-                                "Where the MyŠkoda Public API is reached. Leave unchanged unless Škoda moves it or you run a test server.",
-                                "Waar de MyŠkoda Public API bereikbaar is. Laat ongewijzigd, tenzij Škoda het adres wijzigt of je een testserver gebruikt.",
-                            )
-                        },
-                    }
-                },
             },
             "reauth_confirm": {
                 "title": ("New API key needed", "Nieuwe API-sleutel nodig"),
@@ -174,13 +162,13 @@ TEXTS: dict[str, Any] = {
             "init": {
                 "title": ("MyŠkoda Public API options", "Opties MyŠkoda Public API"),
                 "data": {
-                    "poll_interval": ("Update interval", "Verversingsinterval"),
+                    "poll_interval": ("Polling interval", "Verversingsinterval"),
                     "active_poll_interval": (
-                        "Update interval while active",
+                        "Polling interval while active",
                         "Verversingsinterval tijdens activiteit",
                     ),
                     "fast_poll_when_plugged": (
-                        "Fast updates while plugged in",
+                        "Fast polling while plugged in",
                         "Sneller verversen met kabel aangesloten",
                     ),
                     "auto_wake_minutes": (
@@ -196,7 +184,7 @@ TEXTS: dict[str, Any] = {
                         "Hoe vaak de gegevens van de wagen worden opgehaald. De API laat 20 aanvragen per wagen en per uur toe; commando's tellen daarin mee.",
                     ),
                     "active_poll_interval": (
-                        "How often the data is fetched while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the update interval.",
+                        "How often the data is fetched while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the polling interval.",
                         "Hoe vaak de gegevens worden opgehaald terwijl de wagen laadt of de airconditioning, standverwarming of ventilatie werkt. Nooit trager dan het verversingsinterval.",
                     ),
                     "fast_poll_when_plugged": (
@@ -384,12 +372,6 @@ TEXTS: dict[str, Any] = {
             "message": (
                 "The vehicle cannot be woken: it does not report a charge mode or does not accept a new one.",
                 "De wagen kan niet worden gewekt: hij meldt geen laadmodus of aanvaardt geen nieuwe.",
-            )
-        },
-        "auto_wake_range": {
-            "message": (
-                "Enter 0 to switch the automatic wake off, or {min} to {max} minutes.",
-                "Vul 0 in om het automatisch wekken uit te schakelen, of {min} tot {max} minuten.",
             )
         },
     },
@@ -614,12 +596,6 @@ TEXTS: dict[str, Any] = {
             "charging_profile_time": entity(
                 ("{profile} charging time {number}", "{profile} laadtijd {number}")
             ),
-            "fast_poll_when_plugged": entity(
-                (
-                    "Fast polling while plugged in",
-                    "Sneller verversen met kabel aangesloten",
-                )
-            ),
         },
         "time": {
             "charging_profile_timer_time": entity(
@@ -645,16 +621,6 @@ TEXTS: dict[str, Any] = {
             ),
             "charging_profile_min_battery": entity(
                 ("{profile} minimum charge level", "{profile} minimaal laadniveau")
-            ),
-            "poll_interval": entity(("Polling interval", "Verversingsinterval")),
-            "active_poll_interval": entity(
-                (
-                    "Polling interval while active",
-                    "Verversingsinterval tijdens activiteit",
-                )
-            ),
-            "auto_wake_minutes": entity(
-                ("Wake charging vehicle after", "Ladende wagen wekken na")
             ),
         },
         "select": {

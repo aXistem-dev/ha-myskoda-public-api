@@ -10,6 +10,7 @@ API_KEYS_URL: Final = "https://go.skoda.eu/api-keys"
 
 CONF_VIN: Final = "vin"
 CONF_BASE_URL: Final = "base_url"
+ENV_BASE_URL: Final = "SKODA_API_BASE_URL"
 CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_SPIN: Final = "spin"
 CONF_READONLY: Final = "readonly"
@@ -45,11 +46,12 @@ API_STATUSES: Final = (
     API_STATUS_ERROR,
 )
 
-# Polling settings on the device; they send nothing, so they stay in read only.
-SETTING_KEYS: Final = (
+# Setting entities of earlier versions; the options flow holds these now.
+REMOVED_SETTING_KEYS: Final = (
     CONF_POLL_INTERVAL,
     CONF_ACTIVE_POLL_INTERVAL,
     CONF_FAST_POLL_WHEN_PLUGGED,
+    CONF_AUTO_WAKE_MINUTES,
 )
 
 # Scheduled polls pause while fewer than this many requests remain, so a

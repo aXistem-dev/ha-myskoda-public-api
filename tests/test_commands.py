@@ -10,6 +10,7 @@ from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -725,6 +726,29 @@ async def test_start_air_conditioning_action(
     assert _state(hass, "climate.enyaq_air_conditioning") == "heat_cool"
 
 
+async def test_temperature_in_half_degrees(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    """A temperature set in Fahrenheit reaches the vehicle in 0.5 °C steps."""
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    await setup_integration(hass, config_entry, aioclient_mock)
+    mock_command(aioclient_mock, "post", "air-conditioning/start")
+
+    # 70 °F is 21.11 °C.
+    await hass.services.async_call(
+        "climate",
+        "set_temperature",
+        {"entity_id": "climate.enyaq_air_conditioning", "temperature": 70},
+        blocking=True,
+    )
+    await _call(hass, "climate", "turn_on", "climate.enyaq_air_conditioning")
+    assert calls(aioclient_mock, "post", "air-conditioning/start") == [
+        {"targetTemperature": {"value": 21.0, "unit": "CELSIUS"}}
+    ]
+
+
 async def test_action_on_unsupported_vehicle(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
@@ -1131,25 +1155,6 @@ async def test_auto_wake_held_back(
     assert calls(aioclient_mock, "put", "charging/mode") == []
 
 
-async def test_auto_wake_number(
-    hass: HomeAssistant,
-    config_entry: MockConfigEntry,
-    aioclient_mock: AiohttpClientMocker,
-) -> None:
-    """The wake delay is 0 (off) or 10 to 120 minutes."""
-    await setup_integration(hass, config_entry, aioclient_mock)
-    entity_id = "number.enyaq_wake_charging_vehicle_after"
-    assert _state(hass, entity_id) == "0"
-
-    with pytest.raises(ServiceValidationError) as raised:
-        await _call(hass, "number", "set_value", entity_id, value=5)
-    assert raised.value.translation_key == "auto_wake_range"
-
-    await _call(hass, "number", "set_value", entity_id, value=45)
-    assert config_entry.options[CONF_AUTO_WAKE_MINUTES] == 45
-    assert _state(hass, entity_id) == "45"
-
-
 async def test_auto_wake_gives_up_on_a_silent_car(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
@@ -1183,6 +1188,7 @@ async def test_wake_waits_for_a_pending_change(
     assert calls(aioclient_mock, "put", "charging/mode") == [{"chargeMode": "TIMER"}]
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_quota_wait_entity_clears_when_the_wait_ends(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,

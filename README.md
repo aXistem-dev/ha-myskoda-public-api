@@ -74,18 +74,12 @@ vehicle, which fetches its data once.
 
 | Option | Range | Default | What it does |
 | --- | --- | --- | --- |
-| Update interval | 5–120 min | 10 | How often the vehicle data is fetched. |
-| Update interval while active | 5–120 min | 5 | Used while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the update interval. |
-| Fast updates while plugged in | on / off | off | Also use the active interval while a cable is plugged in without charging. |
+| Polling interval | 5–120 min | 10 | How often the vehicle data is fetched. |
+| Polling interval while active | 5–120 min | 5 | Used while the vehicle charges or runs its air conditioning, auxiliary heating or ventilation. Never slower than the polling interval. |
+| Fast polling while plugged in | on / off | off | Also use the active interval while a cable is plugged in without charging. |
 | Wake charging vehicle after | 0, or 10–120 min | 0 (off) | See [Waking the vehicle](#waking-the-vehicle). |
 | S-PIN | 4 digits | empty | Only needed to start the auxiliary heating. Leave empty to remove it. |
 | Read only | on / off | off | Show the vehicle without any controls; commands and actions are refused. |
-
-The polling settings are also on the device page, where a change applies at
-once, without a reload and without a request: **Polling interval**,
-**Polling interval while active**, **Fast polling while plugged in** (vehicles
-with a charging cable) and **Wake charging vehicle after** (vehicles that can
-be woken). The first three stay in read-only mode; the wake setting does not.
 
 **New API key.** When the key has expired or no longer covers the vehicle,
 Home Assistant asks for a new one. To swap it earlier, use **Reconfigure** on
@@ -113,11 +107,11 @@ Assistant instances. The integration plans around that limit:
 | A command (control or action), or **Wake vehicle** | 2 or 3 (the command, one follow-up, one more if the vehicle is slow) |
 | Adding a vehicle (key check and first fetch) | 2 |
 | Saving the options dialog | 1 |
-| Changing a setting on the device page | 0 |
 
-The diagnostic sensors **API requests remaining**, **API quota refills**,
+**API requests remaining** shows where you stand. **API quota refills**,
 **Waiting for quota until**, **API status**, **Last poll** and **Current
-polling interval** show where you stand.
+polling interval** tell more; they are disabled by default, enable them on the
+device page under the diagnostic entities.
 
 ## Entities
 
@@ -206,7 +200,7 @@ For combustion cars and plug-in hybrids.
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Air conditioning | Climate | Off or heat/cool; 15.5–30 °C in steps of 0.5 |
+| Air conditioning | Climate | Off or heat/cool; 15.5–30 °C, sent in steps of 0.5 °C (also from °F) |
 | Air conditioning state | Sensor | Off, Cooling, Heating, Auxiliary heating, Ventilating, Completed |
 | Target temperature | Sensor | Only without the climate control |
 | Target temperature reached | Sensor | Expected time |
@@ -238,8 +232,9 @@ and the temperature still work.
 | Unavailable data | Sensor | Parts the API could not deliver; attributes `issues`, `stale` |
 | API key expiry, License plate | Sensor | |
 | Refresh data | Button | Fetch now; also works after a failed update |
-| Polling interval, Polling interval while active, Wake charging vehicle after | Number | See [Configuration](#configuration) |
-| Fast polling while plugged in | Switch | See [Configuration](#configuration) |
+
+Last poll, API status, API quota refills, Waiting for quota until, Current
+polling interval and Unavailable data are disabled by default.
 
 **Last poll**, **API status**, **Waiting for quota until** and **Current
 polling interval** stay available when an update fails.
@@ -258,9 +253,9 @@ sent when the vehicle does not support the command, or in read-only mode.
 | `skoda_api.set_charging_limit` | Set `target_state_of_charge`. Vehicles typically accept 50–100 in steps of 10. |
 | `skoda_api.set_charge_mode` | Set `charge_mode` to one of the modes the vehicle offers. |
 | `skoda_api.update_charging_profile` | Change a saved charging location. See below. |
-| `skoda_api.start_air_conditioning` | Start; optional `temperature` (15.5–30 °C) and `without_external_power`. |
+| `skoda_api.start_air_conditioning` | Start; optional `temperature` (15.5–30, always in °C) and `without_external_power`. |
 | `skoda_api.stop_air_conditioning` | Stop the air conditioning. |
-| `skoda_api.start_auxiliary_heating` | Start; optional `duration` (5–60 min), `start_mode` (`heating`, or `ventilation` on vehicles that report a start mode), `temperature` and `spin` (else the S-PIN from the options). |
+| `skoda_api.start_auxiliary_heating` | Start; optional `duration` (5–60 min), `start_mode` (`heating`, or `ventilation` on vehicles that report a start mode), `temperature` (°C) and `spin` (else the S-PIN from the options). |
 | `skoda_api.stop_auxiliary_heating` | Stop the auxiliary heating. |
 | `skoda_api.start_active_ventilation` | Start the active ventilation. |
 | `skoda_api.stop_active_ventilation` | Stop the active ventilation. |
@@ -337,12 +332,12 @@ That changes nothing in the car, but makes it send a fresh report. A wake is a
 command: 2 or 3 requests. The button exists for vehicles that report a charge
 mode and accept a new one, and not in read-only mode.
 
-With **Wake charging vehicle after** set (10–120 minutes; 0 is off), this
-happens on its own: when a poll finds the vehicle charging and its last report
-at least that old, one wake is sent, and no other within that time. It holds
-back while the API asks to wait or fewer than 6 requests of the hour are left,
-and stops after 3 wakes in a row without a new report until the vehicle
-reports again.
+With **Wake charging vehicle after** set in the options (10–120 minutes; 0 is
+off), this happens on its own: when a poll finds the vehicle charging and its
+last report at least that old, one wake is sent, and no other within that
+time. It holds back while the API asks to wait or fewer than 6 requests of the
+hour are left, and stops after 3 wakes in a row without a new report until the
+vehicle reports again.
 
 ## Parking alert
 
@@ -387,13 +382,13 @@ phone with the app.
 They show what the vehicle reported last; a parked or charging car does not
 report all the time. Compare **Last vehicle update** with **Last poll**: a
 recent poll with an old vehicle update means the car sent nothing new. Press
-**Wake vehicle**, or set **Wake charging vehicle after**.
+**Wake vehicle**, or set **Wake charging vehicle after** in the options.
 
 **The quota is used up.**
 Polls pause and the entities keep their values until the quota refills;
 **API quota refills** and **Waiting for quota until** tell when. Check for
 other users of the vehicle's API keys, such as scripts, a second Home
-Assistant or the API reference page, or use a longer update interval.
+Assistant or the API reference page, or use a longer polling interval.
 
 **A change to a charging location is undone.**
 The API replaces a charging location as a whole. When the app and Home
@@ -447,8 +442,9 @@ uv run ruff check . && uv run ruff format --check .
 - `tools/mock_api.py` stands in for the API, with sample vehicles, the hourly
   quota and delayed commands: `uv run python tools/mock_api.py --port 8099`.
   Add a sample VIN (`TMBJB9NY5RF999999` electric, `TMBAR7NP9R7999999` diesel,
-  `TMBZZZNX1R9999999` plug-in hybrid) with **Advanced → API address** set to
-  the mock; any key works except `expired` and `unauthorized`. See `--help`
+  `TMBZZZNX1R9999999` plug-in hybrid) in a Home Assistant started with the
+  environment variable `SKODA_API_BASE_URL` set to the mock's address; any
+  key works except `expired` and `unauthorized`. See `--help`
   for the quota, delay, key expiry and picture options.
 - `tools/build_translations.py` writes the translation files from one table
   of English and Dutch texts. Edit the table, not the JSON files.

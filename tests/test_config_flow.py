@@ -13,7 +13,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.skoda_api.const import (
-    API_BASE_URL,
     CONF_ACTIVE_POLL_INTERVAL,
     CONF_AUTO_WAKE_MINUTES,
     CONF_BASE_URL,
@@ -49,14 +48,11 @@ async def test_user_flow(
     )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
+    assert set(result["data_schema"].schema) == {CONF_VIN, CONF_API_KEY}
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            CONF_VIN: f" {VIN.lower()} ",
-            CONF_API_KEY: f" {API_KEY} ",
-            "advanced": {CONF_BASE_URL: API_BASE_URL},
-        },
+        {CONF_VIN: f" {VIN.lower()} ", CONF_API_KEY: f" {API_KEY} "},
     )
     await hass.async_block_till_done()
 
@@ -84,9 +80,12 @@ async def test_user_flow_without_name(
 
 
 async def test_user_flow_test_server(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Another API address, given under Advanced, is used and stored."""
+    """For development another API address comes from the environment."""
+    monkeypatch.setenv("SKODA_API_BASE_URL", "http://localhost:8099/")
     aioclient_mock.get(f"http://localhost:8099/api/v1/vehicles/{VIN}", json=INFO)
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
@@ -94,11 +93,7 @@ async def test_user_flow_test_server(
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            CONF_VIN: VIN,
-            CONF_API_KEY: API_KEY,
-            "advanced": {CONF_BASE_URL: "http://localhost:8099/"},
-        },
+        {CONF_VIN: VIN, CONF_API_KEY: API_KEY},
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -141,11 +136,7 @@ async def test_user_flow_errors(
     mock_vehicle(aioclient_mock, INFO)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            CONF_VIN: VIN,
-            CONF_API_KEY: API_KEY,
-            "advanced": {CONF_BASE_URL: API_BASE_URL},
-        },
+        {CONF_VIN: VIN, CONF_API_KEY: API_KEY},
     )
     await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
