@@ -1,6 +1,6 @@
 [project]
 name = "ha-myskoda-public-api"
-version = "0.4.0"
+version = "0.4.1"
 description = "Unofficial Home Assistant integration for the MyŠkoda Public API."
 readme = "README.md"
 license = "MIT"
